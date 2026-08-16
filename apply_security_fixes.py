@@ -1,5 +1,6 @@
 from pathlib import Path
 
+# Security patch script; intentionally idempotent only when run once on the original code.
 def rep(s, old, new, label):
     if old not in s: raise SystemExit(label)
     return s.replace(old, new, 1)
