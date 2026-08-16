@@ -230,8 +230,8 @@ export async function createWorkOrder(input: Omit<typeof workOrders.$inferInsert
   const woId = input.woId ?? await generateWorkOrderId();
   const order = { ...input, woId };
   await db.insert(workOrders).values(order);
-  await db.insert(statusLogs).values({ logId: `LOG-${Date.now()}`, woId, toStatus: "OPEN", actorUserId: input.requesterUserId, comment: "สร้างใบแจ้งซ่อม", isCustomerVisible: true });
-  await createNotification({ notificationId: `NTF-${Date.now()}`, recipientUserId: input.requesterUserId, woId, channel: "WEBAPP", title: "WO_CREATED", message: `สร้างใบแจ้งซ่อม ${woId}`, isRead: false, createdAt: new Date() });
+  await db.insert(statusLogs).values({ logId: `LOG-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`, woId, toStatus: "OPEN", actorUserId: input.requesterUserId, comment: "สร้างใบแจ้งซ่อม", isCustomerVisible: true });
+  await createNotification({ notificationId: `NTF-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`, recipientUserId: input.requesterUserId, woId, channel: "WEBAPP", title: "WO_CREATED", message: `สร้างใบแจ้งซ่อม ${woId}`, isRead: false, createdAt: new Date() });
   if (["URGENT", "P1", "CRITICAL"].includes(input.priorityCode.toUpperCase())) {
     void import("./lineMessaging").then(({ sendLineUrgentAlert }) => sendLineUrgentAlert(woId, input.description)).catch(error => console.warn("[LINE URGENT]", error));
   }
@@ -273,9 +273,9 @@ export async function assignWorkOrder(input: { woId: string; techId: string | nu
   }
   const nextStatus = input.techId ? "ASSIGNED" : "OPEN";
   await db.update(workOrders).set({ assignedTechId: input.techId, assignedTeam: input.assignedTeam ?? null, statusCode: nextStatus, updatedAt: new Date() }).where(eq(workOrders.woId, input.woId));
-  await db.insert(statusLogs).values({ logId: `LOG-${Date.now()}`, woId: input.woId, fromStatus: workOrder.statusCode, toStatus: nextStatus, actorUserId: input.actorUserId, comment: input.comment ?? (input.techId ? `มอบหมายงานให้ ${input.techId}` : "ยกเลิกการมอบหมาย"), isCustomerVisible: true });
+  await db.insert(statusLogs).values({ logId: `LOG-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`, woId: input.woId, fromStatus: workOrder.statusCode, toStatus: nextStatus, actorUserId: input.actorUserId, comment: input.comment ?? (input.techId ? `มอบหมายงานให้ ${input.techId}` : "ยกเลิกการมอบหมาย"), isCustomerVisible: true });
   if (input.techId) {
-    await createNotification({ notificationId: `NTF-${Date.now()}`, recipientUserId: input.techId, woId: input.woId, channel: "WEBAPP", title: "WO_ASSIGNED", message: `ได้รับมอบหมายใบงาน ${input.woId}`, isRead: false, createdAt: new Date() });
+    await createNotification({ notificationId: `NTF-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`, recipientUserId: input.techId, woId: input.woId, channel: "WEBAPP", title: "WO_ASSIGNED", message: `ได้รับมอบหมายใบงาน ${input.woId}`, isRead: false, createdAt: new Date() });
     void import("./lineMessaging").then(({ resolveTechnicianLineRecipient, sendLineAssignmentAlert }) => sendLineAssignmentAlert({ woId: input.woId, technicianLineUserId: resolveTechnicianLineRecipient(technicianLineUserId), locationId: workOrder.locationId, description: workOrder.description })).catch(error => console.warn("[LINE ASSIGNED]", error));
   }
   return getWorkOrder(input.woId);
@@ -294,7 +294,7 @@ export async function addStatusLog(input: typeof statusLogs.$inferInsert) {
   await db.insert(statusLogs).values(input);
   await db.update(workOrders).set({ statusCode: input.toStatus as any, startedAt: input.toStatus === "IN_PROGRESS" ? new Date() : workOrder.startedAt, completedAt: ["COMPLETED", "CLOSED"].includes(input.toStatus) ? new Date() : workOrder.completedAt, updatedAt: new Date() }).where(eq(workOrders.woId, input.woId));
   if (workOrder.assignedTechId && wasActive !== isActive) await db.update(technicians).set({ currentOpenJobs: sql`GREATEST(${technicians.currentOpenJobs} + ${workloadDelta(workOrder.statusCode, input.toStatus)}, 0)` }).where(eq(technicians.techId, workOrder.assignedTechId));
-  await createNotification({ notificationId: `NTF-${Date.now()}`, recipientUserId: workOrder.requesterUserId, woId: input.woId, channel: "WEBAPP", title: `WO_${input.toStatus}`, message: input.comment ?? `สถานะใบงานเปลี่ยนเป็น ${input.toStatus}`, isRead: false, createdAt: new Date() });
+  await createNotification({ notificationId: `NTF-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`, recipientUserId: workOrder.requesterUserId, woId: input.woId, channel: "WEBAPP", title: `WO_${input.toStatus}`, message: input.comment ?? `สถานะใบงานเปลี่ยนเป็น ${input.toStatus}`, isRead: false, createdAt: new Date() });
   if (input.toStatus === "COMPLETED" && workOrder.statusCode !== "COMPLETED") {
     const [requester] = await db.select({ lineUserId: maintenanceUsers.lineUserId }).from(maintenanceUsers).where(eq(maintenanceUsers.userId, workOrder.requesterUserId)).limit(1);
     void import("./lineMessaging").then(({ sendLineCompletionAlert }) => sendLineCompletionAlert({ woId: input.woId, requesterLineUserId: requester?.lineUserId ?? workOrder.lineUserId ?? null, locationId: workOrder.locationId, comment: input.comment })).catch(error => console.warn("[LINE COMPLETED]", error));
@@ -306,7 +306,7 @@ export async function setWorkOrderPendingParts(input: { woId: string; actorUserI
   const workOrder = await getWorkOrder(input.woId);
   if (!workOrder) throw new Error("WORK_ORDER_NOT_FOUND");
   return addStatusLog({
-    logId: `LOG-${Date.now()}`,
+    logId: `LOG-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`,
     woId: input.woId,
     fromStatus: workOrder.workOrder.statusCode,
     toStatus: "PENDING_PARTS",
