@@ -1,0 +1,145 @@
+name: Apply security fixes
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/apply-security-fixes.yml'
+permissions:
+  contents: write
+jobs:
+  patch:
+    if: "!contains(github.event.head_commit.message, '[security-fix]')"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch backend authorization
+        shell: python
+        run: |
+          from pathlib import Path
+          p = Path('server/db.ts')
+          s = p.read_text()
+          s = s.replace(
+              'export async function listWorkOrders(filters: { status?: string; priority?: string; category?: string; location?: string; from?: Date; to?: Date; search?: string }) {',
+              'export async function listWorkOrders(filters: { status?: string; priority?: string; category?: string; location?: string; from?: Date; to?: Date; search?: string; requesterUserId?: string; assignedTechId?: string }) {'
+          )
+          old = '''  if (filters.search) conditions.push(or(like(workOrders.woId, `%${filters.search}%`), like(workOrders.description, `%${filters.search}%`)));
+  return db.select().from(workOrders).where(conditions.length ? and(...conditions) : undefined).orderBy(desc(workOrders.createdAt));'''
+          new = '''  if (filters.search) conditions.push(or(like(workOrders.woId, `%${filters.search}%`), like(workOrders.description, `%${filters.search}%`)));
+  if (filters.requesterUserId) conditions.push(eq(workOrders.requesterUserId, filters.requesterUserId));
+  if (filters.assignedTechId) conditions.push(eq(workOrders.assignedTechId, filters.assignedTechId));
+  return db.select().from(workOrders).where(conditions.length ? and(...conditions) : undefined).orderBy(desc(workOrders.createdAt));'''
+          if old not in s: raise SystemExit('db.ts listWorkOrders anchor not found')
+          s = s.replace(old, new)
+          old2 = '''export async function markNotificationRead(notificationId: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  await db.update(notifications).set({ isRead: true }).where(eq(notifications.notificationId, notificationId));
+  return { success: true } as const;
+}'''
+          new2 = '''export async function markNotificationRead(notificationId: string, recipientUserId: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  await db.update(notifications).set({ isRead: true }).where(and(eq(notifications.notificationId, notificationId), eq(notifications.recipientUserId, recipientUserId)));
+  return { success: true } as const;
+}'''
+          if old2 not in s: raise SystemExit('db.ts notification anchor not found')
+          s = s.replace(old2, new2)
+          p.write_text(s)
+
+          p = Path('server/routers.ts')
+          s = p.read_text()
+          anchor = '''export function canSetTechnicianAvailability(user: { openId?: string; role?: string } | null, techId: string) {
+  return Boolean(user && (hasRole(user, ["ADMIN", "SUPERVISOR"]) || (user.role === "TECHNICIAN" && user.openId === techId)));
+}
+'''
+          addition = '''export function canSetTechnicianAvailability(user: { openId?: string; role?: string } | null, techId: string) {
+  return Boolean(user && (hasRole(user, ["ADMIN", "SUPERVISOR"]) || (user.role === "TECHNICIAN" && user.openId === techId)));
+}
+
+async function assertWorkOrderAccess(user: { openId: string; role?: string }, woId: string) {
+  const detail = await getWorkOrder(woId);
+  if (!detail) throw new Error("WORK_ORDER_NOT_FOUND");
+  const order = detail.workOrder;
+  if (hasRole(user, ["ADMIN", "SUPERVISOR"])) return detail;
+  if (user.role === "REPORTER" && order.requesterUserId === user.openId) return detail;
+  if (user.role === "TECHNICIAN" && order.assignedTechId === user.openId) return detail;
+  throw new Error("FORBIDDEN");
+}
+
+const allowedTransitions: Record<string, string[]> = {
+  OPEN: ["ASSIGNED", "IN_PROGRESS", "PENDING_PARTS"],
+  ASSIGNED: ["IN_PROGRESS", "PENDING_PARTS"],
+  IN_PROGRESS: ["PENDING_PARTS", "COMPLETED"],
+  PENDING_PARTS: ["IN_PROGRESS"],
+  COMPLETED: ["CLOSED"],
+  CLOSED: [],
+};
+'''
+          if anchor not in s: raise SystemExit('routers.ts helper anchor not found')
+          s = s.replace(anchor, addition)
+          s = s.replace('dashboard: router({ stats: publicProcedure.query(() => getDashboardStats()) }),', 'dashboard: router({ stats: protectedProcedure.query(() => getDashboardStats()) }),')
+          old = 'list: publicProcedure.input(z.object({ status: z.string().optional(), priority: z.string().optional(), category: z.string().optional(), location: z.string().optional(), from: dateInput, to: dateInput, search: z.string().optional() }).optional()).query(({ input }) => listWorkOrders(input ?? {})),\n    detail: publicProcedure.input(z.object({ woId: z.string().min(1) })).query(({ input }) => getWorkOrder(input.woId)),'
+          new = '''list: protectedProcedure.input(z.object({ status: z.string().optional(), priority: z.string().optional(), category: z.string().optional(), location: z.string().optional(), from: dateInput, to: dateInput, search: z.string().optional() }).optional()).query(({ input, ctx }) => {
+      const filters = { ...(input ?? {}) };
+      if (ctx.user.role === "REPORTER") return listWorkOrders({ ...filters, requesterUserId: ctx.user.openId });
+      if (ctx.user.role === "TECHNICIAN") return listWorkOrders({ ...filters, assignedTechId: ctx.user.openId });
+      return listWorkOrders(filters);
+    }),
+    detail: protectedProcedure.input(z.object({ woId: z.string().min(1) })).query(({ input, ctx }) => assertWorkOrderAccess(ctx.user, input.woId)),'''
+          if old not in s: raise SystemExit('routers.ts list/detail anchor not found')
+          s = s.replace(old, new)
+          old = '''    update: protectedProcedure.input(z.object({ woId: z.string().min(1), values: z.object({ description: z.string().optional(), priorityCode: z.string().optional(), categoryCode: z.string().optional(), locationId: z.string().optional(), assignedTeam: z.string().nullable().optional(), costEstimateThb: z.coerce.number().nullable().optional(), actualCostThb: z.coerce.number().nullable().optional(), customerVisible: z.boolean().optional(), closeNote: z.string().nullable().optional() }) })).mutation(({ input, ctx }) => {
+      if (!canEdit(ctx.user)) throw new Error("FORBIDDEN");
+      if (input.values.categoryCode !== undefined && !canSetWorkOrderCategory(ctx.user)) throw new Error("FORBIDDEN");
+      return updateWorkOrder(input.woId, input.values as any);
+    }),'''
+          new = '''    update: protectedProcedure.input(z.object({ woId: z.string().min(1), values: z.object({ description: z.string().optional(), priorityCode: z.string().optional(), categoryCode: z.string().optional(), locationId: z.string().optional(), assignedTeam: z.string().nullable().optional(), costEstimateThb: z.coerce.number().nullable().optional(), actualCostThb: z.coerce.number().nullable().optional(), customerVisible: z.boolean().optional(), closeNote: z.string().nullable().optional() }) })).mutation(async ({ input, ctx }) => {
+      if (!canEdit(ctx.user)) throw new Error("FORBIDDEN");
+      await assertWorkOrderAccess(ctx.user, input.woId);
+      if (input.values.categoryCode !== undefined && !canSetWorkOrderCategory(ctx.user)) throw new Error("FORBIDDEN");
+      return updateWorkOrder(input.woId, input.values as any);
+    }),'''
+          if old not in s: raise SystemExit('routers.ts update anchor not found')
+          s = s.replace(old, new)
+          old = '''    changeStatus: protectedProcedure.input(z.object({ woId: z.string().min(1), fromStatus: statusSchema.nullable().optional(), toStatus: statusSchema, actorUserId: actorSchema, comment: z.string().optional(), nextAction: z.string().optional(), isCustomerVisible: z.boolean().default(false) })).mutation(async ({ input, ctx }) => {
+      if (!canChangeStatus(ctx.user, input.toStatus)) throw new Error("FORBIDDEN");
+      if (requiresAfterPhoto(input.toStatus) && !(await hasWorkOrderAttachmentType(input.woId, "AFTER"))) throw new Error("AFTER_PHOTO_REQUIRED");
+      return changeStatusInDb({ logId: `LOG-${Date.now()}`, ...input, actorUserId: auditActor(ctx.user, input.actorUserId), fromStatus: input.fromStatus ?? null });
+    }),'''
+          new = '''    changeStatus: protectedProcedure.input(z.object({ woId: z.string().min(1), fromStatus: statusSchema.nullable().optional(), toStatus: statusSchema, actorUserId: actorSchema, comment: z.string().optional(), nextAction: z.string().optional(), isCustomerVisible: z.boolean().default(false) })).mutation(async ({ input, ctx }) => {
+      if (!canChangeStatus(ctx.user, input.toStatus)) throw new Error("FORBIDDEN");
+      const detail = await assertWorkOrderAccess(ctx.user, input.woId);
+      const currentStatus = detail.workOrder.statusCode;
+      if (!allowedTransitions[currentStatus]?.includes(input.toStatus)) throw new Error(`INVALID_STATUS_TRANSITION:${currentStatus}->${input.toStatus}`);
+      if (requiresAfterPhoto(input.toStatus) && !(await hasWorkOrderAttachmentType(input.woId, "AFTER"))) throw new Error("AFTER_PHOTO_REQUIRED");
+      return changeStatusInDb({ logId: `LOG-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`, ...input, actorUserId: auditActor(ctx.user, input.actorUserId), fromStatus: currentStatus });
+    }),'''
+          if old not in s: raise SystemExit('routers.ts status anchor not found')
+          s = s.replace(old, new)
+          old = '''    setPendingParts: protectedProcedure.input(z.object({ woId: z.string().min(1), comment: z.string().trim().max(2000).optional() })).mutation(({ input, ctx }) => {
+      if (!canChangeStatus(ctx.user, "PENDING_PARTS")) throw new Error("FORBIDDEN");
+      return setWorkOrderPendingParts({ ...input, actorUserId: auditActor(ctx.user) });
+    }),'''
+          new = '''    setPendingParts: protectedProcedure.input(z.object({ woId: z.string().min(1), comment: z.string().trim().max(2000).optional() })).mutation(async ({ input, ctx }) => {
+      if (!canChangeStatus(ctx.user, "PENDING_PARTS")) throw new Error("FORBIDDEN");
+      await assertWorkOrderAccess(ctx.user, input.woId);
+      return setWorkOrderPendingParts({ ...input, actorUserId: auditActor(ctx.user) });
+    }),'''
+          if old not in s: raise SystemExit('routers.ts pending anchor not found')
+          s = s.replace(old, new)
+          old = 'if (!canEdit(ctx.user)) throw new Error("FORBIDDEN");\n      if (input.attachmentType !== "OTHER"'
+          new = 'if (!canEdit(ctx.user)) throw new Error("FORBIDDEN");\n      await assertWorkOrderAccess(ctx.user, input.woId);\n      if (input.attachmentType !== "OTHER"'
+          if old not in s: raise SystemExit('routers.ts attachment anchor not found')
+          s = s.replace(old, new, 1)
+          s = s.replace('list: publicProcedure.input(z.object({ search: z.string().optional(), category: z.string().optional(), lowStockOnly: z.boolean().optional() }).optional()).query(({ input }) => listParts(input ?? {})),', 'list: protectedProcedure.input(z.object({ search: z.string().optional(), category: z.string().optional(), lowStockOnly: z.boolean().optional() }).optional()).query(({ input }) => listParts(input ?? {})),')
+          s = s.replace('list: publicProcedure.input(z.object({ woId: z.string().optional(), status: z.string().optional() }).optional()).query(({ input }) => listPartIssues(input ?? {})),', 'list: protectedProcedure.input(z.object({ woId: z.string().optional(), status: z.string().optional() }).optional()).query(async ({ input, ctx }) => {\n      if (input?.woId) await assertWorkOrderAccess(ctx.user, input.woId);\n      return listPartIssues(input ?? {});\n    }),')
+          s = s.replace('list: protectedProcedure.input(z.object({ userId: z.string().optional() }).optional()).query(({ input, ctx }) => listNotifications(input?.userId ?? ctx.user?.openId)),', 'list: protectedProcedure.query(({ ctx }) => listNotifications(ctx.user.openId)),')
+          s = s.replace('markRead: protectedProcedure.input(z.object({ notificationId: z.string().min(1) })).mutation(({ input }) => markNotificationRead(input.notificationId)),', 'markRead: protectedProcedure.input(z.object({ notificationId: z.string().min(1) })).mutation(({ input, ctx }) => markNotificationRead(input.notificationId, ctx.user.openId)),')
+          p.write_text(s)
+      - name: Commit fixes
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add server/routers.ts server/db.ts
+          git diff --cached --quiet || git commit -m 'fix: enforce work order authorization and status transitions [security-fix]'
+          git push
