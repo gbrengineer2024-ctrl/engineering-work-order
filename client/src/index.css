@@ -1,0 +1,183 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@500;600;700;800&display=swap');
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+:root {
+  font-family: 'DM Sans', ui-sans-serif, system-ui, sans-serif;
+  color: #e7eaf6;
+  background: #090d1d;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  --radius: 0.85rem;
+  --background: #090d1d;
+  --foreground: #e7eaf6;
+  --card: #131a33;
+  --card-foreground: #e7eaf6;
+  --popover: #171f3d;
+  --popover-foreground: #f4f6ff;
+  --primary: #818cf8;
+  --primary-foreground: #090d1d;
+  --secondary: #1d2749;
+  --secondary-foreground: #dce4ff;
+  --muted: #202a4c;
+  --muted-foreground: #aab5d2;
+  --accent: #293663;
+  --accent-foreground: #eef1ff;
+  --destructive: #fb7185;
+  --border: #2b375f;
+  --input: #34416d;
+  --ring: #a5b4fc;
+}
+
+* { border-color: var(--border); }
+html { background: #090d1d; }
+body { margin: 0; min-width: 320px; min-height: 100vh; background: radial-gradient(circle at 10% 0%, #222c59 0, transparent 32rem), radial-gradient(circle at 96% 100%, #241b4a 0, transparent 36rem), #090d1d; }
+button, input, textarea, select { font: inherit; }
+button { cursor: pointer; }
+::selection { background: #6366f1; color: #ffffff; }
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --radius-sm: calc(var(--radius) - 0.35rem);
+  --radius-md: calc(var(--radius) - 0.15rem);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 0.35rem);
+}
+
+@layer base {
+  * { @apply border-border; }
+  body { @apply bg-background text-foreground; }
+  h1, h2, h3, h4 { font-family: 'Manrope', 'DM Sans', sans-serif; }
+}
+
+/* Legacy utilities are intentionally remapped so the operational UI keeps one dark visual system. */
+.bg-white, .bg-white\/75, .bg-white\/80, .bg-white\/85, .bg-white\/90 { background-color: #131a33 !important; }
+.bg-slate-50, .bg-slate-50\/50, .bg-slate-50\/60, .bg-slate-50\/70, .bg-slate-50\/80 { background-color: #1a2342 !important; }
+.bg-slate-100 { background-color: #232e53 !important; }
+.border-slate-100, .border-slate-200, .border-slate-200\/70, .border-slate-200\/80 { border-color: #2b375f !important; }
+.text-slate-950, .text-slate-900, .text-slate-800, .text-slate-700 { color: #edf0ff !important; }
+.text-slate-600, .text-slate-500 { color: #c0c9e4 !important; }
+.text-slate-400, .text-slate-300 { color: #98a5c7 !important; }
+.bg-teal-50, .bg-teal-50\/50, .bg-teal-50\/70, .bg-teal-50\/80, .bg-teal-50\/40 { background-color: #242554 !important; }
+.border-teal-100, .border-teal-200, .border-teal-300 { border-color: #4f46a5 !important; }
+.text-teal-800, .text-teal-700, .text-teal-600, .text-teal-300 { color: #b7c3ff !important; }
+.bg-teal-100 { background-color: #30316b !important; }
+.bg-teal-400, .bg-teal-500, .bg-teal-600, .bg-teal-700, .bg-teal-800, .bg-emerald-600, .bg-emerald-700 { background-color: #4f46e5 !important; }
+.hover\:bg-teal-500:hover, .hover\:bg-teal-600:hover, .hover\:bg-teal-700:hover, .hover\:bg-emerald-600:hover { background-color: #4338ca !important; }
+.hover\:bg-teal-50:hover, .hover\:bg-teal-50\/50:hover, .hover\:bg-slate-50:hover { background-color: #27315b !important; }
+.focus\:border-teal-500:focus { border-color: #a5b4fc !important; }
+.from-teal-400, .from-teal-700 { --tw-gradient-from: #4f46e5 var(--tw-gradient-from-position) !important; --tw-gradient-to: rgb(79 70 229 / 0) var(--tw-gradient-to-position) !important; }
+.to-cyan-500, .to-cyan-700, .to-cyan-800 { --tw-gradient-to: #7c3aed var(--tw-gradient-to-position) !important; }
+.from-cyan-700 { --tw-gradient-from: #3730a3 var(--tw-gradient-from-position) !important; --tw-gradient-to: rgb(55 48 163 / 0) var(--tw-gradient-to-position) !important; }
+
+/* Shell backgrounds that were declared as arbitrary teal gradients in the initial prototype. */
+.min-h-screen { background: radial-gradient(circle at 8% 0%, rgb(67 56 202 / 0.26), transparent 28rem), radial-gradient(circle at 95% 95%, rgb(124 58 237 / 0.2), transparent 34rem), #090d1d !important; }
+.sticky { background-color: rgb(19 26 51 / 0.94) !important; border-color: #2b375f !important; }
+.border-white\/70, .border-white\/80 { border-color: #394875 !important; }
+.ring-slate-200\/70 { --tw-ring-color: rgb(57 72 117 / 0.8) !important; }
+
+/* Hotel operations command center: operational hierarchy without changing existing workflows. */
+.hotel-ops-app {
+  --ops-ink: #090d1d;
+  --ops-panel: rgb(19 26 51 / 0.9);
+  --ops-line: rgb(129 140 248 / 0.22);
+  position: relative;
+  isolation: isolate;
+}
+.hotel-ops-app::before {
+  content: "";
+  position: fixed;
+  z-index: -1;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.48;
+  background-image: linear-gradient(rgb(165 180 252 / 0.045) 1px, transparent 1px), linear-gradient(90deg, rgb(165 180 252 / 0.045) 1px, transparent 1px);
+  background-size: 32px 32px;
+  mask-image: linear-gradient(to bottom, black, transparent 58%);
+}
+.hotel-ops-app > .min-h-screen {
+  background: radial-gradient(circle at 92% 4%, rgb(129 140 248 / 0.22), transparent 25rem), radial-gradient(circle at 12% 80%, rgb(124 58 237 / 0.16), transparent 28rem), #090d1d !important;
+}
+.hotel-ops-app aside {
+  background: linear-gradient(180deg, #0e1430 0%, #090d1d 72%) !important;
+  border-right-color: rgb(129 140 248 / 0.24) !important;
+}
+.hotel-ops-app aside > div:first-child::after {
+  content: "Operations command center";
+  display: block;
+  margin-top: 0.25rem;
+  margin-left: 3.5rem;
+  color: rgb(165 180 252 / 0.68);
+  font-size: 0.56rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.hotel-ops-app main > header {
+  box-shadow: 0 1px 0 rgb(129 140 248 / 0.14), 0 10px 32px rgb(3 7 25 / 0.2);
+}
+.hotel-ops-app h1,
+.hotel-ops-app h2,
+.hotel-ops-app h3 {
+  letter-spacing: -0.035em;
+}
+.hotel-ops-app h2 {
+  text-wrap: balance;
+}
+.hotel-ops-app [class~="shadow-sm"] {
+  box-shadow: 0 12px 28px rgb(3 7 25 / 0.18), inset 0 1px 0 rgb(255 255 255 / 0.035) !important;
+}
+.hotel-ops-app [class*="rounded-2xl"],
+.hotel-ops-app [class*="rounded-3xl"] {
+  border-color: var(--ops-line);
+}
+.hotel-ops-app table thead {
+  background-color: rgb(36 47 89 / 0.76) !important;
+}
+.hotel-ops-app table tbody tr:hover {
+  background-color: rgb(79 70 229 / 0.13) !important;
+}
+.hotel-ops-app button[class*="from-teal-700"][class*="to-cyan-700"] {
+  color: #ffffff !important;
+  border: 1px solid rgb(196 181 253 / 0.48);
+  background-image: linear-gradient(110deg, #6366f1 0%, #7c3aed 100%) !important;
+  box-shadow: 0 14px 28px rgb(49 46 129 / 0.48), inset 0 1px 0 rgb(255 255 255 / 0.22) !important;
+}
+.hotel-ops-app button[class*="from-teal-700"][class*="to-cyan-700"]:hover { background-image: linear-gradient(110deg, #818cf8 0%, #8b5cf6 100%) !important; }
+.hotel-ops-app [role="dialog"] {
+  max-block-size: calc(100dvh - 1rem);
+  overscroll-behavior: contain;
+}
+@media (max-width: 1023px) {
+  .hotel-ops-app aside > div:first-child::after { display: none; }
+}
+@media (max-width: 639px) {
+  .hotel-ops-app [role="dialog"] { border-radius: 1.25rem; }
+}
+
+input, textarea, select { color-scheme: dark; }
+input::placeholder, textarea::placeholder { color: #8e9abb !important; }
+
+@media (prefers-reduced-motion: no-preference) {
+  button, a, input, select, textarea { transition: color 160ms ease, background-color 160ms ease, border-color 160ms ease, transform 160ms ease, box-shadow 160ms ease; }
+  button:active { transform: scale(0.98); }
+}

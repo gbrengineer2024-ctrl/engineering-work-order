@@ -1,0 +1,2 @@
+ALTER TABLE `attachments` ADD `attachmentType` enum('BEFORE','AFTER','OTHER') DEFAULT 'OTHER' NOT NULL;--> statement-breakpoint
+CREATE INDEX `attachments_type_idx` ON `attachments` (`woId`,`attachmentType`);

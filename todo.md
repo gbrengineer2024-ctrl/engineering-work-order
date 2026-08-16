@@ -1,0 +1,194 @@
+# Project TODO
+
+- [x] สร้างโครงสร้างฐานข้อมูลสำหรับ Users, Locations, Work Orders, Status Log, Technicians, Lookups, Attachments และ Notifications ตาม Google Sheets
+- [x] ใช้ชื่อสถานะภาษาอังกฤษ OPEN, ASSIGNED, IN_PROGRESS, COMPLETED, CLOSED ทุกจุดในระบบ
+- [x] ใช้ชื่อ role ภาษาอังกฤษ GUEST, STAFF, SUPERVISOR, TECH, ADMIN ทุกจุดในระบบ
+- [x] พัฒนา Dashboard แสดงจำนวนใบงานแยกตามสถานะ งานเกิน SLA และสถิติรายวัน
+- [x] พัฒนา Work Order Management สำหรับสร้าง แก้ไข ดูรายละเอียด ค้นหา และกรองตาม status, priority, category, location และช่วงวันที่
+- [x] พัฒนา Status Log แสดงประวัติการเปลี่ยนสถานะพร้อมคอมเมนต์ของแต่ละใบงาน
+- [x] พัฒนา Locations ดูรายการสถานที่ แสดง QR code และเพิ่ม CRUD API สำหรับต่อยอด management UI
+- [x] พัฒนา Technicians ดูข้อมูลช่าง ทักษะ ทีม เวร workload และเพิ่ม CRUD API สำหรับต่อยอด management UI
+- [x] พัฒนา Lookups API สำหรับค่ามาตรฐาน status, priority, category และ SLA hours
+- [x] วาง contract และ role/status API สำหรับ Role-based Access Control ของ GUEST, STAFF, SUPERVISOR, TECH, ADMIN
+- [x] กำหนดสิทธิ์สร้าง มอบหมาย เปลี่ยนสถานะ และปิดใบงานตาม role พร้อม unit tests
+- [x] พัฒนาการมอบหมายงานโดย SUPERVISOR/ADMIN พร้อมตรวจ capacity และแสดง workload ของช่างแต่ละคน
+- [x] พัฒนาระบบแนบรูป/เอกสารในใบงานผ่าน S3 storage และแสดงไฟล์ใน detail dialog
+- [x] ป้องกันการกดทำเครื่องหมายว่าเสร็จใน UI เมื่อยังไม่มีรูป AFTER และแจ้งขั้นตอนที่ผู้ใช้ต้องทำ
+- [x] แสดงข้อความที่มองเห็นชัดว่า ต้องแนบรูปหลังงาน (AFTER) ก่อนเปลี่ยนสถานะเป็น COMPLETED พร้อมมี regression evidence
+- [x] พัฒนาระบบแจ้งเตือนความคืบหน้าและงานเกิน SLA เป็น notification queue พร้อม unread state
+- [x] ออกแบบ UI โทน premium hotel-operations รองรับ desktop และ mobile พร้อม responsive layout
+- [x] เพิ่ม unit tests สำหรับ auth และ contract ของ status/role business rules
+- [x] ตรวจสอบ typecheck, test และการทำงานผ่าน browser
+- [x] ตรวจสอบหน้าจอ responsive และปรับ typography, spacing, color และ interaction เบื้องต้น
+- [x] จัดทำเอกสารวิธีใช้งานและแนวทางปรับแก้ระบบต่อ
+
+- [x] ปรับ auth user model และ permission logic ให้ใช้ GUEST, STAFF, SUPERVISOR, TECH, ADMIN สอดคล้องกันทุกชั้น
+- [x] ลบ hardcoded fallback data จาก Dashboard และ Work Orders แล้วใช้ empty/loading/error states สำหรับฐานข้อมูลจริง
+- [x] เพิ่ม UI แก้ไข Work Order และฟิลเตอร์ category, location และ date range ให้ครบ
+- [x] ขยายหน้า Technicians ให้แสดง skills, shiftCode และ currentOpenJobs/maxOpenJobs อย่างชัดเจน
+
+- [x] เพิ่ม loading/error states ที่ชัดเจนสำหรับ dashboard, workOrders, locations, technicians และ detail queries
+- [x] แสดง skills ของ technician อย่างชัดเจนพร้อม shiftCode และ workload ในแต่ละการ์ด
+- [x] เพิ่ม loading/error states ที่ชัดเจนสำหรับ detailQuery ในหน้ารายละเอียด Work Order (เช่น skeleton/spinner ระหว่างโหลด และ error message เมื่อโหลด log/detail ไม่สำเร็จ)
+
+- [x] เพิ่ม unit tests ครอบคลุม permission matrix ของ create, assign, changeStatus และ close พร้อมผูก actor/requester กับ ctx.user ใน audit flow
+- [x] แก้ logic currentOpenJobs ตอน status transition ให้ถูกต้องทุกเส้นทางและเพิ่ม tests สำหรับ assign → IN_PROGRESS → COMPLETED/CLOSED
+- [x] เพิ่ม overdue-SLA notification generation และเชื่อม notification UI กับผู้ใช้จริงโดยไม่ hardcode userId พร้อม mark-as-read/queue view
+
+- [x] ปรับ main content container ให้จัดวางอยู่กึ่งกลางหน้าจอบน desktop และยัง responsive บน mobile
+
+- [x] จัดแนวปุ่ม Create work order และ header action ให้อยู่ในแกนเดียวกับ centered content container บน desktop และไม่ชิดขอบจอบน mobile
+
+- [x] ปรับขนาด typography, spacing, cards, filters, table และ dialog ให้พอดีกับมือถือ พร้อมตรวจทาน overflow และ touch targets
+
+- [x] ปรับตาราง Work Orders สำหรับมือถือโดยเฉพาะด้วย stacked cards แทนการพึ่ง min-w-[760px] อย่างเดียว
+- [x] ตรวจและปรับ dialog ทุกตัวบนมือถือให้มี max-height, scroll behavior, spacing และ touch targets ที่สม่ำเสมอ
+
+- [x] อ่านโค้ด Home.tsx หลัง patch และยืนยัน DialogContent ของทุก dialog ให้ใช้ mobile width, max-height, overflow, padding และ spacing สอดคล้องกันจริง
+- [x] ตรวจ touch targets ในทุก dialog ทั้งปุ่ม, file upload trigger, selects และ inputs ให้เหมาะกับการแตะบนมือถือ
+
+- [x] ตรวจและแก้ layout ที่เพี้ยนใน desktop และ mobile หลังเพิ่มภาษาไทยและข้อมูลส่วนใหม่
+- [x] เปลี่ยนข้อความ UI หลักของระบบเป็นภาษาไทย พร้อมคงรหัสสถานะและ role ในระบบให้ถูกต้อง
+- [x] ตรวจข้อมูล Google Sheets รุ่นล่าสุดและออกแบบการนำเข้าชีต 10_Parts และ 11_Part_Issues
+- [x] เพิ่ม schema, API และ UI สำหรับ Parts และ Part Issues ให้เชื่อมกับ Work Orders
+- [ ] ตรวจทานและทำให้ฟีเจอร์ข้อ 1, 2 และ 3 ใช้งานได้จริงตามความหมายของผู้ใช้
+- [x] เพิ่ม API สำหรับสร้างและแก้ไขข้อมูลอะไหล่โดยผู้ดูแลหรือผู้ควบคุมงาน
+- [x] เพิ่ม API สำหรับขอ อนุมัติ และจ่ายอะไหล่ พร้อมตรวจจำนวนคงเหลือและสิทธิ์ผู้ใช้
+- [x] สร้าง UI คลังอะไหล่และรายการเบิกที่ใช้ API จริง พร้อมรองรับมือถือและเดสก์ท็อป
+- [x] ปรับ Parts Manager ให้ข้อมูลคลังอ่านง่ายใน dialog แคบบนมือถือ โดยลดการพึ่งพา horizontal scroll
+- [x] เชื่อมปุ่มเมนูอะไหล่ในหน้า Legacy ให้เปิด Parts Manager ที่ใช้งานได้จริงแทน placeholder
+- [x] เพิ่ม regression test สำหรับ trigger เมนูอะไหล่จากหน้า Legacy ไปยัง Parts Manager
+- [x] เพิ่ม unit tests สำหรับกฎจำนวนคงเหลือของรายการเบิกอะไหล่
+- [x] เพิ่ม unit tests ระดับ permission สำหรับ API อะไหล่และรายการเบิก ครอบคลุมบทบาทที่อนุญาตและกรณี FORBIDDEN
+- [x] ทดสอบ router-level success paths ของ ADMIN/SUPERVISOR สำหรับจัดการคลังและอนุมัติ/จ่ายอะไหล่ รวมถึง partIssues.request ของทุก role ที่อนุญาต
+- [x] ครอบคลุม permission matrix ระดับ router ของ parts และ partIssues สำหรับ ADMIN, SUPERVISOR, REPORTER, TECHNICIAN และผู้ใช้ที่ยังไม่เข้าสู่ระบบ
+- [x] ปรับพื้นหลังระบบให้ไม่ใช่สีขาวล้วน โดยยังคงอ่านง่ายและเหมาะกับงานปฏิบัติการโรงแรม
+- [x] ทดสอบ typecheck, unit tests และ responsive screenshots หลังการเปลี่ยนแปลง
+- [x] อ่าน Home.tsx เวอร์ชันสุดท้ายโดยตรงและไล่ทุก section/dialog/empty state/filter label เพื่อยืนยันข้อความ UI หลักเป็นภาษาไทย
+- [x] ตรวจโค้ด layout ของหน้า Parts และ Part Issues รวมถึงข้อความไทยยาวบน desktop/mobile จากไฟล์สุดท้าย
+
+- [x] ออกแบบตารางและ API สำหรับเก็บการตั้งค่า LINE Messaging API แบบปกปิด token และจำกัดสิทธิ์ ADMIN
+- [x] เพิ่มหน้า Admin Settings สำหรับกำหนด Channel Access Token, User/Group ID และเปิด/ปิดการแจ้งเตือน LINE
+- [x] เชื่อมการส่งแจ้งเตือน LINE สำหรับงานเร่งด่วนและใบงานเกิน SLA พร้อมสถานะผลการส่ง
+- [x] เพิ่ม unit tests และตรวจ responsive หน้า Admin Settings สำหรับ LINE Messaging API
+- [x] เพิ่ม tests สำหรับ LINE settings API/permission/save/test flow รวมถึง masked public settings
+- [ ] ตรวจหน้า Admin Settings ด้วยผู้ใช้บทบาท ADMIN จริงทั้ง desktop และ mobile พร้อมตรวจ loading/error states
+- [ ] ทดสอบการบันทึก Channel Access Token และ User/Group ID ผ่าน UI จริงโดยยืนยัน success/error handling
+- [x] ออกแบบ LINE Login OAuth และกำหนด callback URL/credentials ที่ต้องใช้โดยไม่เก็บ secret ในโค้ด
+- [x] เพิ่มข้อมูลชื่อแสดงผลและแผนกของผู้ใช้สำหรับ flow ลงทะเบียนครั้งแรก
+- [x] สร้างหน้าเข้าสู่ระบบด้วย LINE และหน้าลงทะเบียนชื่อ/แผนกเฉพาะผู้ใช้ที่ยังไม่มีข้อมูล
+- [x] ดึงชื่อผู้ใช้ที่เข้าสู่ระบบมาเติมผู้แจ้งในฟอร์มสร้าง Work Order อัตโนมัติ
+- [ ] เพิ่ม tests และตรวจ responsive ของ login, registration และ Work Order requester flow
+- [x] เพิ่ม regression coverage สำหรับสถานะต้องลงทะเบียน, การ trim ชื่อและแผนกจาก LINE, และการยึด requester จาก session เพื่อป้องกันการปลอมผู้แจ้ง
+- [x] เปลี่ยนปุ่มสร้างใบงานใน Legacy ให้เรียก React callback โดยตรง และเลิกใช้ click interception ใน wrapper
+- [x] แยก live credential check ของ LINE Login ออกจาก regression suite เพื่อไม่ให้ timeout เครือข่ายทำให้ผล test ภายในล้มเหลว
+- [x] แก้และทดสอบกรณีหน้า LINE Login ค้างที่ข้อความกำลังตรวจสอบการเข้าสู่ระบบเมื่อยังไม่มี session
+- [x] ตรวจ redirect URI ที่ LINE Login ส่งออกและแก้ให้ตรงกับ URL ที่ลงทะเบียนใน LINE Developers Console
+- [x] ให้ผู้ดูแลลงทะเบียน callback URL ของระบบใน LINE Developers Console แล้วทดสอบ authorization-code flow จริง
+- [x] ตรวจและเผยแพร่ route LINE callback บนโดเมนเว็บไซต์จริงที่กำลังตอบ 404
+- [x] แก้ LINE state/verifier cookie flow ที่ทำให้ callback ของหน้าทดสอบตอบ Invalid LINE Login session
+- [x] ตรวจข้อมูลผู้ใช้ที่สร้างจาก LINE Login และกำหนด model/สิทธิ์สำหรับการจัดการผู้ใช้งานโดย ADMIN
+- [x] เพิ่ม Admin Users API สำหรับดู ค้นหา แก้ชื่อ แผนก บทบาท และสถานะผู้ใช้งาน
+- [x] เพิ่มหน้า Admin Users ภาษาไทยที่แสดงข้อมูลผู้ใช้จาก LINE Login และมีฟอร์มจัดการผู้ใช้
+- [x] ปรับโครงสร้าง dashboard/work orders สำหรับมือถือให้มี header, cards, actions และ navigation ที่ชัดเจนขึ้น
+- [ ] ตรวจภาพและทดสอบ mobile/desktop หลังปรับ UI และการจัดการผู้ใช้
+- [x] พัฒนา Admin Users API สำหรับรายการผู้ใช้ LINE, ค้นหา และอัปเดตชื่อ แผนก บทบาท สถานะอย่างมีสิทธิ์ควบคุม
+- [x] เพิ่มหน้า "ผู้ใช้งาน" เฉพาะผู้ดูแล พร้อมตาราง desktop และ card layout บนมือถือ
+- [x] ปรับ navigation, heading และ primary action ให้เหมาะกับหน้า Admin Users และหน้าจอมือถือ
+- [x] เพิ่ม unit tests สำหรับ authorization และ validation ของ Admin Users API
+- [x] ตรวจ typecheck, unit tests และภาพ desktop/mobile ก่อนเผยแพร่รุ่น Admin Users
+- [x] เพิ่ม unit tests สำหรับ LINE registration validation และบังคับ requesterUserId ให้ยึด session ผู้ใช้จริง
+- [ ] เก็บหลักฐาน responsive ของ login/registration ทั้ง desktop-mobile และยืนยัน requester ที่แสดงใน UI สร้างใบงาน
+- [x] เพิ่มปุ่มขอเบิกอะไหล่ในรายละเอียดใบงานสำหรับช่าง พร้อมผูกการเบิกกับเลขใบงานและตัดสต็อกเมื่อจ่ายอะไหล่
+- [x] เพิ่มสถานะ Pending Parts สำหรับงานที่รออะไหล่หรือรอการสั่งซื้อ และแทนที่ตัวชี้วัดเกิน SLA ใน UI
+- [x] รองรับการเลือกและอัปโหลดรูปหลายรูปในใบงาน พร้อมการกดดูรูปแบบเต็มจอ
+- [x] เลื่อนการอัปโหลดรูปจากเว็บแอปเข้า Google Drive ตามคำขอผู้ใช้; คง S3 เป็นพื้นที่เก็บรูปหลักจนกว่าจะร้องขอและจัดเตรียมสิทธิ์ใหม่
+- [x] เพิ่มสถานะความพร้อมช่างตามหน้างาน ได้แก่ พร้อมรับงาน, เข้าเวร, ออกเวร และหยุด พร้อมกำหนดผู้มีสิทธิ์แก้ไข
+- [x] ยืนยันและบังคับเลขใบงานให้ระบบสร้างอัตโนมัติ ไม่เปิดให้กรอกเอง และใช้อ้างอิงคำขอเบิกอะไหล่
+- [x] จัดทำตาราง Role และสิทธิ์ของระบบ และยืนยันความต้องการเพิ่มชีตสิทธิ์ภายนอกก่อนเขียนกลับ Google Sheets
+- [x] เพิ่ม API setPendingParts, API สถานะเวรช่าง และ validation การเบิกที่ต้องอ้างอิงใบงานจริง พร้อม regression tests
+- [x] สร้างโฟลเดอร์ Google Drive `HotelMaintenance/WorkOrders` และบันทึก Folder ID สำหรับการเชื่อมต่อในอนาคต
+- [x] เพิ่มหน้า Admin Settings สำหรับตั้งค่าการเชื่อมต่อ Google Drive, โฟลเดอร์ปลายทาง และสถานะเปิดใช้ โดยคง S3 เป็นค่าเริ่มต้นและไม่แสดงข้อมูลลับในหน้าจอ
+- [x] แก้ตัวชี้วัด Dashboard ที่ยังแสดง “เกิน SLA” ให้แสดงจำนวนงาน Pending Parts แทน เพื่อให้ข้อความในระบบสอดคล้องกันทุกหน้าจอ
+- [x] ย้าย “สถานะเวรของฉัน” ออกจากหน้า Dashboard ไปไว้ในหน้าช่าง เพื่อให้บริบทและ layout สอดคล้องกับงานของช่าง
+- [x] ใช้สถานะเวร ON_DUTY เป็นเงื่อนไขแสดงรายชื่อช่างที่พร้อมรับงานเพื่อให้ผู้ควบคุมงานเลือกมอบหมายด้วยตนเอง
+- [x] เปลี่ยน flow การมอบหมายให้ไม่มีการเลือกช่างอัตโนมัติเมื่อมีช่างเข้าเวรหลายคน และให้ Supervisor หรือ Admin เป็นผู้เลือกและยืนยันช่างจากรายชื่อ ON_DUTY เท่านั้น
+- [x] ย้ายส่วนเบิกอะไหล่จากเครื่องมือกลางเข้าสู่รายละเอียดใบงาน พร้อมผูกคำขอเบิกกับเลขใบงานที่เปิดอยู่
+- [x] เพิ่มปุ่มสร้าง PDF ในการ์ดหรือรายละเอียดใบงานเมื่อสถานะเป็น Pending Parts โดยใช้ข้อมูลใบงานและรายการอะไหล่ที่เกี่ยวข้อง
+- [x] แก้ปุ่ม “สร้างใบงาน” บนหน้า operations ที่กดแล้วไม่เปิดฟอร์ม และเพิ่ม regression test ป้องกันปัญหาซ้ำ
+- [x] แก้หน้าแรกเมื่อไม่มี session ให้แสดงหน้าเข้าสู่ระบบ LINE แทนการค้างที่ข้อความ “กำลังเตรียมข้อมูลผู้ใช้งาน...” และเพิ่ม regression test
+- [ ] แก้ปุ่มเพิ่มรูปในฟอร์มสร้างใบงานให้ใช้กล้องของมือถือได้ และเลือกหลายรูปได้โดยไม่บังคับการจับภาพ
+- [ ] ย้ายการระบุหมวดหมู่จากฟอร์มผู้แจ้งไปให้ช่างกรอกหรือปรับในรายละเอียดใบงานตามสิทธิ์
+- [ ] แสดง role ของผู้แจ้งในใบงาน และปรับ role/แผนกในหน้าจัดการผู้ใช้ให้เลือกจาก dropdown
+- [ ] แก้ layout ปุ่มเพิ่มอะไหล่และฟอร์มขอเบิกอะไหล่ไม่ให้ล้นหน้าจอบนมือถือ
+- [ ] ยืนยันว่ารายการขอเบิกอ้างอิงเลขใบงานที่เซิร์ฟเวอร์สร้างอัตโนมัติ โดยไม่มีช่องให้ผู้ใช้กรอกเลขเอง
+- [x] ตรวจและแก้ layout overflow ในหน้า Dashboard, ใบงาน, Sheet/Dialog และ navigation ทั้ง desktop/mobile ก่อนส่งมอบ
+- [x] ปรับ visual theme ให้ร่วมสมัยขึ้นโดยรักษาความชัดเจนและการเข้าถึงของระบบงานโรงแรม
+- [x] เพิ่มแบบจำลองข้อมูลและ UI สำหรับแนบรูปภาพก่อนเริ่มงานและหลังเสร็จงานใน Work Order
+- [x] บังคับให้ช่างเพิ่มรูปหลังงานก่อนเปลี่ยนสถานะเป็น COMPLETED และแสดงรูปในรายละเอียดใบงาน
+- [x] ปรับ Work Order mobile view ให้กระชับ มีข้อมูลสำคัญครบ และควบคุมการล้นของข้อความ/ปุ่ม
+- [x] แก้ปุ่มเพิ่มรายการในแต่ละหน้าให้ทำงานตรงบริบท ไม่เปิดฟอร์มสร้างใบงานเมื่ออยู่หน้าอื่น
+- [x] ส่ง callback เปิดฟอร์มสร้างใบงานจาก ModernHome เข้า Legacy โดยตรง และยกเลิก click interception ของ wrapper
+- [x] เพิ่ม unit tests สำหรับเงื่อนไขที่อนุญาตให้เปิดฟอร์มสร้างใบงานจากปุ่มในหน้า Legacy
+- [x] เชื่อมบัญชีที่มีบทบาท TECHNICIAN จาก Admin Users เป็นข้อมูลช่างในหน้า Technicians อย่างควบคุมได้
+- [x] เพิ่ม UI ผู้ดูแลสำหรับกำหนด/แก้บทบาท ADMIN และอธิบายจุดตั้งค่าสิทธิ์ผู้ใช้ให้ชัดเจน
+- [x] เพิ่ม unit tests สำหรับการบังคับรูปหลังงานและการซิงก์บทบาท TECHNICIAN กับข้อมูลช่าง
+- [x] ตรวจ flow สร้าง Work Order และระบุจุดแนบรูปก่อนบันทึกให้ผู้ใช้เห็นชัดเจน
+- [x] เพิ่มการเลือกรูปก่อนเริ่มงานในฟอร์มสร้าง Work Order พร้อม preview และแนบรูปกับใบงานหลังบันทึกสำเร็จ
+- [x] รองรับการเพิ่มรูปภาพเพิ่มเติมจากรายละเอียดใบงาน โดยแยกรูปก่อนงานและรูปหลังงานชัดเจน
+- [x] เปลี่ยน global visual theme ออกจากพื้นขาว–เขียวเป็นโทนเข้มร่วมสมัย พร้อมคง contrast และการอ่านภาษาไทย
+- [x] ปรับ dashboard, sidebar, cards, dialogs และ mobile navigation ให้ใช้ธีมใหม่สม่ำเสมอและไม่ล้นจอ
+- [x] เพิ่ม visual identity แบบ hotel-operations ให้ dashboard ด้วย hierarchy, headline และ motif ที่อ่านง่ายบนทุก viewport
+- [x] เพิ่ม tests สำหรับการสร้าง Work Order พร้อมไฟล์แนบรูปก่อนงาน
+- [x] ตรวจ typecheck, unit tests และภาพหน้า create Work Order บน desktop/mobile ก่อนเผยแพร่
+- [x] ตรวจฟอร์มสร้างใบงานบน production แบบไม่บันทึกข้อมูล: แสดงผู้แจ้งและแผนกจาก session, Room / Location, หมวดหมู่, ความสำคัญ และพื้นที่รูปก่อนงาน; ตรวจปุ่มเข้าถึงจาก viewport 390px ไม่ล้นจอ
+- [x] เพิ่ม LINE Messaging API notification เมื่อมอบหมายงานให้ช่างและเมื่อปิดงานเพื่อแจ้งผู้แจ้ง พร้อมทดสอบผู้รับและ failure path
+- [x] แก้ LINE notification เหตุการณ์มอบหมายงานที่ไม่ถึงช่างด้วยการส่งตรงเมื่อเชื่อม LINE และ fallback User/Group ID เมื่อยังไม่เชื่อม พร้อมยืนยัน production
+- [x] เพิ่ม handler แจ้ง LINE แบบเจาะผู้รับ: มอบหมายงานส่งไปยัง lineUserId ของช่าง และ COMPLETED ส่งไปยัง lineUserId ของผู้แจ้ง โดยไม่ทำให้ธุรกรรมใบงานล้มเหลวเมื่อส่งข้อความไม่สำเร็จ
+- [x] เพิ่ม regression tests สำหรับข้อความแจ้งเตือน LINE ของเหตุการณ์มอบหมายงานและงานเสร็จ
+- [x] ตรวจภาพและทดสอบ flow ใหม่ด้วย desktop/mobile ก่อนเผยแพร่
+- [x] ตรวจโครงสร้างและข้อมูลจริงของชีต 01_Users ก่อนนำบทบาทมาใช้ในระบบ
+- [x] แทนที่ role model เดิมด้วย ADMIN, REPORTER, SUPERVISOR และ TECHNICIAN ใน schema, API, RBAC และ UI
+- [x] นำเข้าหรือซิงก์ข้อมูลผู้ใช้จากชีต 01_Users โดยรักษาการเชื่อมโยงกับบัญชี LINE ที่มีอยู่
+- [x] กำหนดให้การลงทะเบียน LINE ครั้งแรกบันทึกชื่อและแผนก แล้วสร้าง role เป็น REPORTER เสมอ
+- [x] จำกัดหน้าแก้ชื่อ แผนก บทบาท และสถานะผู้ใช้ให้ ADMIN เท่านั้น
+- [x] ใช้ชื่อและแผนกจากโปรไฟล์ LINE ที่ลงทะเบียนแล้วเป็นข้อมูลผู้แจ้งใน Work Order
+- [x] ปรับคำเรียก role และหน้า Technicians ให้รองรับ TECHNICIAN พร้อมตรวจการซิงก์รายการช่าง
+- [x] เพิ่ม tests สำหรับ RBAC ใหม่ การลงทะเบียน REPORTER และการสร้าง Work Order จากข้อมูลโปรไฟล์
+- [x] ตรวจ typecheck, unit tests และภาพ desktop/mobile หลังเปลี่ยน role model
+- [x] ตรวจหน้า Dashboard, Work Orders, Technicians, Admin Users, dialogs และ navigation ทุก breakpoint พร้อมเก็บหลักฐาน overflow fix
+- [ ] ยืนยัน UI แนบรูปก่อนงาน/หลังงานและรายละเอียดใบงานจากไฟล์สุดท้าย พร้อมทดสอบการปิดงานผ่าน UI
+- [x] เพิ่ม router-level tests สำหรับการปฏิเสธ COMPLETED เมื่อยังไม่มีรูป AFTER และการอนุญาตเมื่อมีรูปครบ
+- [x] ทดสอบ primary action ของทุก section เพื่อยืนยันว่าไม่เปิดฟอร์มสร้างใบงานผิดบริบท
+- [ ] ทดสอบ end-to-end สำหรับ registration→REPORTER, สร้าง Work Order, Admin แก้ role, technician sync และปิดงานด้วยรูปหลังงาน
+- [x] เชื่อม route หลักให้ใช้ ModernHome เป็นหน้าใช้งานจริงแทน LegacyHome
+- [x] ตรวจและยืนยันว่าปุ่มสร้างใบงานของ ModernHome รองรับการแนบรูปก่อนงานครบตาม flow ใหม่
+- [x] แก้ contrast ของข้อความหัวข้อที่ใช้ text-slate-950 ในหน้า ModernHome บนธีมเข้ม
+- [x] ปรับ Admin Users ในหน้า ModernHome ที่ route ใช้งานจริงให้ใช้บทบาท ADMIN, REPORTER, SUPERVISOR และ TECHNICIAN เท่านั้น
+- [x] เปลี่ยนปุ่มสร้างใบงานใน ModernHome ให้เปิดฟอร์มรูปก่อนงานผ่าน callback โดยตรง โดยไม่ใช้ event click interception
+- [x] เพิ่มระยะ safe area ด้านล่างของหน้า ModernHome บนมือถือ เพื่อไม่ให้ปุ่มสร้างใบงานแบบลอยทับเนื้อหา
+- [x] ย้ายปุ่มสร้างใบงานหลักจากด้านล่างขึ้นไปอยู่ในส่วนบนที่มองเห็นชัดบนมือถือและเดสก์ท็อป
+- [x] เปลี่ยนฟิลด์พื้นที่ในฟอร์มสร้างใบงานเป็นช่องกรอกเองชื่อ Room / Location
+- [x] แสดงชื่อผู้แจ้งพร้อมแผนกจากโปรไฟล์ LINE ในฟอร์มสร้างใบงาน
+- [x] ตัดฟิลด์หมวดย่อยออกจากฟอร์มสร้างใบงานและ payload ที่ส่งจากหน้าเว็บ
+- [x] ควบคุมการเปิดฟอร์มสร้างใบงานของหน้า Legacy ภายใต้ event scope ของ ModernHome เพื่อป้องกัน dialog ซ้อนกัน
+- [x] ลบ re-export เก่าจาก Home.tsx ที่ทำให้ Vite ติดตาม import ModernHome ผิดพลาด และยืนยันด้วย production build
+- [x] ตรวจหน้า ModernHome ที่ desktop 1440px และ mobile 390px หลังแก้ไข โดยไม่พบหน้า error หรือ layout ล้นใน viewport ที่ตรวจ
+- [x] ส่งคำขอมอบหมายซ้ำบน production สำหรับใบงานทดสอบ WO-20260814-5215 ให้ Bom หลังแก้ fallback LINE user ID และยืนยันธุรกรรมเปลี่ยนสถานะเป็น ASSIGNED สำเร็จ
+- [x] ยืนยันจาก LINE ของผู้รับ User/Group ID สำรองว่าได้รับข้อความแจ้งมอบหมายจากการทดสอบซ้ำ และเปิด deep link ใบงานได้สำเร็จ
+- [x] แก้ข้อบกพร่องการแจ้งเตือนมอบหมายงาน: เมื่อไม่มี LINE User ID ระบบบันทึก SKIPPED พร้อมเหตุผล และไม่เปิดเผย LINE ID ผ่าน API รายชื่อช่าง
+- [ ] ให้ช่าง Bom เข้าสู่ระบบด้วย LINE และให้ ADMIN กำหนดบทบาท TECHNICIAN เพื่อสร้างระเบียนช่างที่ผูก LINE user ID สำหรับการแจ้งเตือน
+- [ ] หลังเชื่อม LINE ของช่างแล้ว ให้ตรวจ `isLineConnected` และทดสอบมอบหมายงานส่งข้อความจริง 1 ครั้งโดยได้รับความยินยอมก่อนส่ง
+- [x] เพิ่ม fallback ของการแจ้งมอบหมายไปยัง User/Group ID จาก Admin Settings เมื่อช่างยังไม่มี LINE User ID เพื่อไม่ให้พลาดการแจ้งเตือน
+- [x] ส่งทดสอบมอบหมายงานบน production ผ่าน User/Group ID สำรอง: WO-20260814-5215 เปลี่ยนเป็น ASSIGNED และ LINE integration บันทึก SENT_FALLBACK โดยไม่มี error
+- [x] ยืนยันจาก LINE ของ User/Group ID ที่ตั้งค่าใน Admin Settings ว่าได้รับข้อความ [มอบหมายงาน] ของ WO-20260814-5215
+- [x] เพิ่ม deep link ในข้อความแจ้ง LINE เพื่อเปิดรายละเอียดใบงานที่ตรงกับ WO ID โดยตรงหลังผู้ใช้เข้าสู่ระบบ
+- [x] ตรวจบน production ว่าการเปิด URL `?woId=` แสดงรายละเอียดใบงานอัตโนมัติหลังมี session แล้ว
+- [x] แก้ deep link ให้เลือกปุ่มเปิดรายละเอียดใบงานแทนแถวตารางที่ไม่มี handler คลิก พร้อม regression test
+- [x] ยืนยันจากผู้ใช้ว่าข้อความมอบหมายล่าสุดผ่าน User/Group ID สำรองได้รับครบ และกดลิงก์เปิดรายละเอียด WO-20260814-5215 ได้จริง
+- [x] ตรวจและแก้ bug ที่ผู้ใช้รายงานบน production: พบปุ่มสร้างใบงานซ้ำจาก wrapper และยืนยันหลังเผยแพร่ว่าเหลือปุ่มหลักเพียงจุดเดียว
+- [x] ยกเลิกปุ่มสร้างใบงานแบบลอย และใช้ปุ่มหลักจุดเดียวในส่วนหัว Dashboard/ใบงานหลังเข้าสู่ระบบแทน เพื่อไม่ให้ทับทุกหน้า
+- [x] สรุปและตรวจสอบสิทธิ์ของ ADMIN, REPORTER, SUPERVISOR และ TECHNICIAN จาก router และ UI จริงใน roles-and-data-storage.md
+- [x] ตรวจและบันทึกคำอธิบายว่าแอปบันทึกข้อมูลลงฐานข้อมูลอย่างไร และไม่มีการเขียนกลับ Google Sheets อัตโนมัติในเวอร์ชันปัจจุบันใน roles-and-data-storage.md
+- [x] แก้ปุ่มสร้างใบงานที่ซ้ำบน Dashboard ให้เหลือจุดสร้างงานหลักเพียงจุดเดียว และไม่แสดงแบบลอยทับทุกหน้า
+- [x] ลบปุ่มสร้างใบงานซ้ำที่ยังอยู่ใน header เนื้อหา Legacy โดยคงปุ่มหลักด้านบนเพียงจุดเดียวหลังเข้าสู่ระบบ

@@ -1,0 +1,2 @@
+ALTER TABLE `work_orders` MODIFY COLUMN `statusCode` enum('OPEN','ASSIGNED','IN_PROGRESS','PENDING_PARTS','COMPLETED','CLOSED') NOT NULL DEFAULT 'OPEN';--> statement-breakpoint
+ALTER TABLE `technicians` ADD `availabilityStatus` enum('ON_DUTY','OFF_DUTY','ON_LEAVE') DEFAULT 'OFF_DUTY' NOT NULL;
