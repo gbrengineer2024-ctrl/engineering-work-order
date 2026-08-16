@@ -92,7 +92,7 @@ export const appRouter = router({
       if (!canCreate(ctx.user)) throw new Error("FORBIDDEN");
       const profile = await getMaintenanceProfile(ctx.user.openId);
       if (!profile?.isActive) throw new Error("PROFILE_INCOMPLETE");
-      return createWorkOrder({ ...input, woId: undefined, requesterUserId: ctx.user.openId, lineUserId: profile.lineUserId ?? undefined, categoryCode: "UNSPECIFIED", slaHours: input.slaHours === undefined ? undefined : String(input.slaHours), statusCode: "OPEN" });
+      return createWorkOrder({ ...input, woId: undefined, requesterUserId: ctx.user.openId, lineUserId: profile.lineUserId ?? undefined, categoryCode: input.categoryCode, slaHours: input.slaHours === undefined ? undefined : String(input.slaHours), statusCode: "OPEN" });
     }),
     update: protectedProcedure.input(z.object({ woId: z.string().min(1), values: z.object({ description: z.string().optional(), priorityCode: z.string().optional(), categoryCode: z.string().optional(), locationId: z.string().optional(), assignedTeam: z.string().nullable().optional(), costEstimateThb: z.coerce.number().nullable().optional(), actualCostThb: z.coerce.number().nullable().optional(), customerVisible: z.boolean().optional(), closeNote: z.string().nullable().optional() }) })).mutation(async ({ input, ctx }) => {
       if (!canEdit(ctx.user)) throw new Error("FORBIDDEN");
@@ -131,7 +131,7 @@ export const appRouter = router({
     update: protectedProcedure.input(z.object({ locationId: z.string().min(1), values: z.object({ areaName: z.string().optional(), areaType: z.string().optional(), building: z.string().nullable().optional(), floor: z.string().nullable().optional(), roomNo: z.string().nullable().optional(), notes: z.string().nullable().optional(), isActive: z.boolean().optional() }) })).mutation(({ input, ctx }) => canManage(ctx.user) ? updateLocation(input.locationId, input.values) : Promise.reject(new Error("FORBIDDEN"))),
   }),
   technicians: router({
-    list: publicProcedure.query(() => listTechnicians()),
+    list: protectedProcedure.query(() => listTechnicians()),
     create: protectedProcedure.input(z.object({ techId: z.string().min(1), techName: z.string().min(1), teamCode: z.string().min(1), skills: z.string().optional(), shiftCode: z.string().optional(), phone: z.string().optional(), maxOpenJobs: z.coerce.number().int().positive().default(5) })).mutation(({ input, ctx }) => canManage(ctx.user) ? createTechnician({ ...input, isActive: true, availabilityStatus: "OFF_DUTY", currentOpenJobs: 0 }) : Promise.reject(new Error("FORBIDDEN"))),
     update: protectedProcedure.input(z.object({ techId: z.string().min(1), values: z.object({ techName: z.string().optional(), teamCode: z.string().optional(), skills: z.string().nullable().optional(), shiftCode: z.string().nullable().optional(), phone: z.string().nullable().optional(), maxOpenJobs: z.coerce.number().int().positive().optional(), isActive: z.boolean().optional() }) })).mutation(({ input, ctx }) => canManage(ctx.user) ? updateTechnician(input.techId, input.values) : Promise.reject(new Error("FORBIDDEN"))),
     setAvailability: protectedProcedure.input(z.object({ techId: z.string().min(1), availabilityStatus: technicianAvailabilitySchema })).mutation(({ input, ctx }) => canSetTechnicianAvailability(ctx.user, input.techId) ? updateTechnicianAvailability(input.techId, input.availabilityStatus) : Promise.reject(new Error("FORBIDDEN"))),
