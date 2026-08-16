@@ -7,3 +7,4 @@ new='list: protectedProcedure.input(z.object({ woId: z.string().optional(), stat
 s=s.replace(old,new)
 p.write_text(s)
 print('compile/access corrections applied')
+# retrigger workflow after the workflow file is installed
