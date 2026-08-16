@@ -146,7 +146,7 @@ export async function syncTechnicianFromMaintenanceProfile(profile: NonNullable<
   } });
 }
 
-export async function listWorkOrders(filters: { status?: string; priority?: string; category?: string; location?: string; from?: Date; to?: Date; search?: string }) {
+export async function listWorkOrders(filters: { status?: string; priority?: string; category?: string; location?: string; from?: Date; to?: Date; search?: string; requesterUserId?: string; assignedTechId?: string }) {
   const db = await getDb();
   if (!db) return [];
   const conditions = [];
@@ -157,6 +157,8 @@ export async function listWorkOrders(filters: { status?: string; priority?: stri
   if (filters.from) conditions.push(gte(workOrders.createdAt, filters.from));
   if (filters.to) conditions.push(lte(workOrders.createdAt, filters.to));
   if (filters.search) conditions.push(or(like(workOrders.woId, `%${filters.search}%`), like(workOrders.description, `%${filters.search}%`)));
+  if (filters.requesterUserId) conditions.push(eq(workOrders.requesterUserId, filters.requesterUserId));
+  if (filters.assignedTechId) conditions.push(eq(workOrders.assignedTechId, filters.assignedTechId));
   return db.select().from(workOrders).where(conditions.length ? and(...conditions) : undefined).orderBy(desc(workOrders.createdAt));
 }
 
@@ -335,10 +337,10 @@ export async function createNotification(input: typeof notifications.$inferInser
   return input;
 }
 
-export async function markNotificationRead(notificationId: string) {
+export async function markNotificationRead(notificationId: string, recipientUserId: string) {
   const db = await getDb();
   if (!db) throw new Error("Database unavailable");
-  await db.update(notifications).set({ isRead: true }).where(eq(notifications.notificationId, notificationId));
+  await db.update(notifications).set({ isRead: true }).where(and(eq(notifications.notificationId, notificationId), eq(notifications.recipientUserId, recipientUserId)));
   return { success: true } as const;
 }
 
