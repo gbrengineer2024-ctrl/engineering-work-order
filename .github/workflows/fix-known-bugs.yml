@@ -1,0 +1,49 @@
+name: Fix known application bugs
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/fix-known-bugs.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: ${{ github.event_name == 'workflow_dispatch' || !contains(github.event.head_commit.message, '[known-bugs-fix]') }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Apply deterministic fixes
+        shell: python
+        run: |
+          from pathlib import Path
+
+          p = Path('server/routers.ts')
+          s = p.read_text(encoding='utf-8')
+
+          old = 'categoryCode: "UNSPECIFIED", slaHours: input.slaHours === undefined ? undefined : String(input.slaHours), statusCode: "OPEN"'
+          new = 'categoryCode: input.categoryCode, slaHours: input.slaHours === undefined ? undefined : String(input.slaHours), statusCode: "OPEN"'
+          if old not in s:
+              raise SystemExit('BUG-01 anchor not found')
+          s = s.replace(old, new, 1)
+
+          old = 'technicians: router({\n    list: publicProcedure.query(() => listTechnicians()),'
+          new = 'technicians: router({\n    list: protectedProcedure.query(() => listTechnicians()),'
+          if old not in s:
+              raise SystemExit('BUG-02 anchor not found')
+          s = s.replace(old, new, 1)
+
+          p.write_text(s, encoding='utf-8')
+
+      - name: Commit fixes
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add server/routers.ts
+          git diff --cached --quiet || git commit -m 'fix: work order category and technician privacy [known-bugs-fix]'
+          git push
