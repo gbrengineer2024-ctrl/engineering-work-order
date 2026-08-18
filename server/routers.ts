@@ -6,6 +6,7 @@ import { adminProcedure, protectedProcedure, publicProcedure, router } from "./_
 import { addAttachment, addStatusLog as changeStatusInDb, approvePartIssue, assignWorkOrder, completeLineProfile, createLocation, createPart, createTechnician, createWorkOrder, getDashboardStats, getGoogleDriveIntegrationSettings, getMaintenanceProfile, getWorkOrder, hasWorkOrderAttachmentType, issuePart, listLocations, listLookups, listMaintenanceUsers, listNotifications, listPartIssues, listParts, listTechnicians, listWorkOrders, markNotificationRead, requestPartIssue, saveGoogleDriveIntegrationSettings, setWorkOrderPendingParts, updateLocation, updateMaintenanceUser, updatePart, updateTechnician, updateTechnicianAvailability, updateWorkOrder } from "./db";
 import { getLineIntegrationPublicSettings, saveLineIntegrationSettings, testLineIntegration } from "./lineMessaging";
 import { storagePut } from "./storage";
+import { driveStoragePut } from "./googleDrive";
 
 const statusSchema = z.enum(["OPEN", "ASSIGNED", "IN_PROGRESS", "PENDING_PARTS", "COMPLETED", "CLOSED"]);
 const roleSchema = z.enum(["ADMIN", "REPORTER", "SUPERVISOR", "TECHNICIAN"]);
@@ -121,7 +122,11 @@ export const appRouter = router({
       const rawBase64 = input.fileDataBase64.replace(/^data:[^;]+;base64,/, "");
       const bytes = Buffer.from(rawBase64, "base64");
       if (bytes.byteLength > 8 * 1024 * 1024) throw new Error("Attachment exceeds 8MB limit");
-      const stored = await storagePut(`work-orders/${input.woId}/${Date.now()}-${input.fileName.replace(/[^a-zA-Z0-9._-]/g, "_")}`, bytes, input.mimeType);
+      const storageKey = `work-orders/${input.woId}/${Date.now()}-${input.fileName.replace(/[^a-zA-Z0-9._-]/g, "_")}`;
+      const driveSettings = await getGoogleDriveIntegrationSettings();
+      const stored = driveSettings.isEnabled
+        ? await driveStoragePut(storageKey, bytes, input.mimeType)
+        : await storagePut(storageKey, bytes, input.mimeType);
       return addAttachment({ attachmentId: `ATT-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`, woId: input.woId, attachmentType: input.attachmentType, fileName: input.fileName, fileUrl: stored.url, mimeType: input.mimeType, fileSize: bytes.byteLength, uploadedBy: auditActor(ctx.user, input.uploadedBy), createdAt: new Date() });
     }),
   }),

@@ -9,4 +9,10 @@ export const ENV = {
   forgeApiKey: process.env.BUILT_IN_FORGE_API_KEY ?? "",
   lineLoginChannelId: process.env.LINE_LOGIN_CHANNEL_ID ?? "",
   lineLoginChannelSecret: process.env.LINE_LOGIN_CHANNEL_SECRET ?? "",
+  googleServiceAccountEmail: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL ?? "",
+  googlePrivateKey: process.env.GOOGLE_PRIVATE_KEY ?? "",
+  // Falls back to the "HotelMaintenance/WorkOrders" folder already created for this project
+  // (see google-workspace-integration-notes.md) if no override is set.
+  googleDriveWorkOrdersFolderId:
+    process.env.GOOGLE_DRIVE_WORK_ORDERS_FOLDER_ID ?? "1ealFTh1rxz2Bt7D7Yij4KpnK0j9ZoC3K",
 };
