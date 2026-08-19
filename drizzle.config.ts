@@ -1,15 +1,11 @@
 import { defineConfig } from "drizzle-kit";
 
-const connectionString = process.env.DATABASE_URL;
-if (!connectionString) {
-  throw new Error("DATABASE_URL is required to run drizzle commands");
-}
-
+// Cloudflare D1 is SQLite. Migration SQL is generated locally with
+// `pnpm db:generate` and then applied to D1 with:
+//   wrangler d1 migrations apply <DB_NAME> --local   (dev)
+//   wrangler d1 migrations apply <DB_NAME> --remote   (production)
 export default defineConfig({
   schema: "./drizzle/schema.ts",
-  out: "./drizzle",
-  dialect: "mysql",
-  dbCredentials: {
-    url: connectionString,
-  },
+  out: "./drizzle/migrations",
+  dialect: "sqlite",
 });
