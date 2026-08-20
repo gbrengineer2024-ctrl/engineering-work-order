@@ -58,7 +58,7 @@ export function LegacyHome() {
   const assignMutation = trpc.workOrders.assign.useMutation({ onSuccess: () => { ordersQuery.refetch(); statsQuery.refetch(); techniciansQuery.refetch(); detailQuery.refetch(); } });
   const statusMutation = trpc.workOrders.changeStatus.useMutation({ onSuccess: () => { ordersQuery.refetch(); statsQuery.refetch(); techniciansQuery.refetch(); detailQuery.refetch(); notificationsQuery.refetch(); }, onError: error => window.alert(error.message === "AFTER_PHOTO_REQUIRED" ? "กรุณาเพิ่มรูปหลังเสร็จงานอย่างน้อย 1 รูปก่อนทำเครื่องหมายว่าเสร็จ" : `ไม่สามารถเปลี่ยนสถานะได้: ${error.message}`) });
   const uploadMutation = trpc.workOrders.uploadAttachment.useMutation({ onSuccess: () => detailQuery.refetch() });
-  const notificationsQuery = trpc.notifications.list.useQuery({ userId: authUser?.openId }, { enabled: Boolean(authUser) });
+  const notificationsQuery = trpc.notifications.list.useQuery(undefined, { enabled: Boolean(authUser) });
   const markNotificationReadMutation = trpc.notifications.markRead.useMutation({ onSuccess: () => notificationsQuery.refetch() });
   const profileQuery = trpc.profile.me.useQuery(undefined, { enabled: Boolean(authUser) });
   const completeProfileMutation = trpc.profile.completeRegistration.useMutation({ onSuccess: () => profileQuery.refetch() });

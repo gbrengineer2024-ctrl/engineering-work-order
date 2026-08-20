@@ -32,8 +32,8 @@ function authenticatedContext(openId = "line-authenticated"): TrpcContext {
       updatedAt: new Date(),
       lastSignedIn: new Date(),
     },
-    req: { protocol: "https", headers: {} } as TrpcContext["req"],
-    res: {} as TrpcContext["res"],
+    req: new Request("https://example.com"),
+    responseCookies: [],
   };
 }
 

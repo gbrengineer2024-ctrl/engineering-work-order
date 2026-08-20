@@ -22,8 +22,8 @@ const managedPart = { partCode: "PART-TEST", partNameTh: "หลอดไฟ LED
 function createContext(role: Role | null): TrpcContext {
   return {
     user: role ? { id: 1, openId: `line-${role}`, name: role, email: `${role.toLowerCase()}@example.com`, loginMethod: "test", role, createdAt: new Date(), updatedAt: new Date(), lastSignedIn: new Date() } : null,
-    req: { protocol: "https", headers: {} } as TrpcContext["req"],
-    res: {} as TrpcContext["res"],
+    req: new Request("https://example.com"),
+    responseCookies: [],
   };
 }
 

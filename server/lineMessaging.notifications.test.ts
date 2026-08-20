@@ -1,5 +1,12 @@
-import { describe, expect, it } from "vitest";
+import { beforeAll, describe, expect, it } from "vitest";
 import { formatLineAssignmentMessage, formatLineCompletionMessage, getWorkOrderDeepLink, missingLineRecipientReason, resolveDispatchRecipient, resolveTechnicianLineRecipient } from "./lineMessaging";
+import { ENV } from "./_core/env";
+
+beforeAll(() => {
+  // Normally set per-request by bindEnv() from PUBLIC_APP_BASE_URL; set it
+  // directly here so deep-link assertions are deterministic.
+  ENV.publicAppBaseUrl = "https://hotelmaintai-e5vycneh.manus.space";
+});
 
 describe("LINE event notification messages", () => {
   it("สร้างข้อความมอบหมายงานที่ระบุใบงาน พื้นที่ และรายละเอียดให้ช่าง", () => {

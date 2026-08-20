@@ -1,15 +1,17 @@
 import { and, desc, eq, gte, like, lte, or, sql } from "drizzle-orm";
-import { drizzle } from "drizzle-orm/mysql2";
+import { drizzle } from "drizzle-orm/d1";
 import { InsertUser, attachments, googleDriveIntegrationSettings, locations, lookups, maintenanceUsers, notifications, partIssues, parts, statusLogs, technicians, users, workOrders } from "../drizzle/schema";
-import { ENV } from "./_core/env";
 
+// D1 is bound per-Worker via wrangler.toml ([[d1_databases]] binding = "DB").
+// bindDatabase() is called once at the start of every request (see server/index.ts)
+// so the rest of this file can keep calling getDb() exactly as before.
 let _db: ReturnType<typeof drizzle> | null = null;
 
+export function bindDatabase(d1: D1Database) {
+  _db = drizzle(d1);
+}
+
 export async function getDb() {
-  if (!_db && process.env.DATABASE_URL) {
-    try { _db = drizzle(process.env.DATABASE_URL); }
-    catch (error) { console.warn("[Database] Failed to connect:", error); _db = null; }
-  }
   return _db;
 }
 
@@ -25,7 +27,7 @@ export async function upsertUser(user: InsertUser): Promise<void> {
   values.lastSignedIn = user.lastSignedIn ?? new Date();
   updateSet.lastSignedIn = values.lastSignedIn;
   if (user.role !== undefined) { values.role = user.role; updateSet.role = values.role; }
-  await db.insert(users).values(values).onDuplicateKeyUpdate({ set: updateSet });
+  await db.insert(users).values(values).onConflictDoUpdate({ target: users.openId, set: updateSet });
 }
 
 export async function getUserByOpenId(openId: string) {
@@ -62,7 +64,7 @@ export async function completeLineProfile(input: { userId: string; displayName: 
     isActive: true,
     lastLoginAt: new Date(),
     consentVersion: "LINE-LOGIN-2026-08",
-  }).onDuplicateKeyUpdate({ set: { displayName: input.displayName, department: input.department, lastLoginAt: new Date() } });
+  }).onConflictDoUpdate({ target: maintenanceUsers.userId, set: { displayName: input.displayName, department: input.department, lastLoginAt: new Date() } });
   return getMaintenanceProfile(input.userId);
 }
 
@@ -138,7 +140,7 @@ export async function syncTechnicianFromMaintenanceProfile(profile: NonNullable<
     isActive: plan.isActive,
     maxOpenJobs: 5,
     currentOpenJobs: 0,
-  }).onDuplicateKeyUpdate({ set: {
+  }).onConflictDoUpdate({ target: technicians.techId, set: {
     techName: plan.techName,
     teamCode: plan.teamCode,
     lineUserId: plan.lineUserId,
@@ -266,7 +268,7 @@ export async function assignWorkOrder(input: { woId: string; techId: string | nu
   const wasActive = ["ASSIGNED", "IN_PROGRESS"].includes(workOrder.statusCode);
   const willBeActive = Boolean(input.techId);
   if (workOrder.assignedTechId && workOrder.assignedTechId !== input.techId && wasActive) {
-    await db.update(technicians).set({ currentOpenJobs: sql`greatest(${technicians.currentOpenJobs} - 1, 0)` }).where(eq(technicians.techId, workOrder.assignedTechId));
+    await db.update(technicians).set({ currentOpenJobs: sql`MAX(${technicians.currentOpenJobs} - 1, 0)` }).where(eq(technicians.techId, workOrder.assignedTechId));
   }
   if (input.techId && workOrder.assignedTechId !== input.techId && willBeActive) {
     await db.update(technicians).set({ currentOpenJobs: sql`${technicians.currentOpenJobs} + 1` }).where(eq(technicians.techId, input.techId));
@@ -293,7 +295,7 @@ export async function addStatusLog(input: typeof statusLogs.$inferInsert) {
   const isActive = isWorkloadActive(input.toStatus);
   await db.insert(statusLogs).values(input);
   await db.update(workOrders).set({ statusCode: input.toStatus as any, startedAt: input.toStatus === "IN_PROGRESS" ? new Date() : workOrder.startedAt, completedAt: ["COMPLETED", "CLOSED"].includes(input.toStatus) ? new Date() : workOrder.completedAt, updatedAt: new Date() }).where(eq(workOrders.woId, input.woId));
-  if (workOrder.assignedTechId && wasActive !== isActive) await db.update(technicians).set({ currentOpenJobs: sql`GREATEST(${technicians.currentOpenJobs} + ${workloadDelta(workOrder.statusCode, input.toStatus)}, 0)` }).where(eq(technicians.techId, workOrder.assignedTechId));
+  if (workOrder.assignedTechId && wasActive !== isActive) await db.update(technicians).set({ currentOpenJobs: sql`MAX(${technicians.currentOpenJobs} + ${workloadDelta(workOrder.statusCode, input.toStatus)}, 0)` }).where(eq(technicians.techId, workOrder.assignedTechId));
   await createNotification({ notificationId: `NTF-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`, recipientUserId: workOrder.requesterUserId, woId: input.woId, channel: "WEBAPP", title: `WO_${input.toStatus}`, message: input.comment ?? `สถานะใบงานเปลี่ยนเป็น ${input.toStatus}`, isRead: false, createdAt: new Date() });
   if (input.toStatus === "COMPLETED" && workOrder.statusCode !== "COMPLETED") {
     const [requester] = await db.select({ lineUserId: maintenanceUsers.lineUserId }).from(maintenanceUsers).where(eq(maintenanceUsers.userId, workOrder.requesterUserId)).limit(1);
@@ -519,7 +521,7 @@ export async function saveGoogleDriveIntegrationSettings(input: { isEnabled: boo
     rootFolderId: input.rootFolderId ?? null,
     rootFolderUrl: input.rootFolderUrl ?? null,
     updatedByUserId: input.updatedByUserId,
-  }).onDuplicateKeyUpdate({ set: {
+  }).onConflictDoUpdate({ target: googleDriveIntegrationSettings.integrationKey, set: {
     isEnabled: input.isEnabled,
     rootFolderId: input.rootFolderId ?? null,
     rootFolderUrl: input.rootFolderUrl ?? null,

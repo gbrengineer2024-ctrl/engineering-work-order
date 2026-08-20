@@ -1,0 +1,38 @@
+name = "engineering-work-order"
+main = "./server/index.ts"
+compatibility_date = "2026-08-01"
+compatibility_flags = ["nodejs_compat"]
+
+[assets]
+directory = "./dist/public"
+binding = "ASSETS"
+not_found_handling = "single-page-application"
+# /api/* and /files/* must always reach the Worker, even for full-page
+# navigations (e.g. LINE Login's redirect back to /api/auth/line/callback),
+# not just fetch()-based tRPC calls.
+run_worker_first = ["/api/*", "/files/*"]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "engineering-work-order-db"
+database_id = "716893c5-0cfe-4ef6-8a55-73aad52b6a61"
+migrations_dir = "drizzle/migrations"
+
+[[r2_buckets]]
+binding = "BUCKET"
+bucket_name = "engineering-work-order-files"
+
+# Non-secret config. VITE_APP_ID is only used to namespace the (now unused)
+# Manus OAuth session payload; safe to leave as the project name.
+[vars]
+VITE_APP_ID = "engineering-work-order"
+# Used to build LINE deep links back into the app. Set this once you know
+# your workers.dev subdomain or custom domain, e.g. "https://engineering-work-order.<you>.workers.dev".
+PUBLIC_APP_BASE_URL = "https://example.workers.dev"
+
+# Secrets (never put these in this file -- set them with `wrangler secret put <NAME>`):
+#   JWT_SECRET               - long random string, signs session cookies
+#   LINE_LOGIN_CHANNEL_ID     - from the LINE Developers console
+#   LINE_LOGIN_CHANNEL_SECRET - from the LINE Developers console
+#   OWNER_OPEN_ID             - optional, openId of the account treated as owner
+#   OAUTH_SERVER_URL          - optional, only needed if you re-enable Manus-style OAuth login
