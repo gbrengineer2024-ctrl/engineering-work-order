@@ -14,6 +14,10 @@ export interface WorkerEnv {
   LINE_LOGIN_CHANNEL_SECRET?: string;
   PUBLIC_APP_BASE_URL?: string;
   ASSETS?: Fetcher;
+  // Google service account used to upload work-order photos to Drive when
+  // google_drive_integration_settings.isEnabled is true (see googleDrive.ts).
+  GOOGLE_SERVICE_ACCOUNT_EMAIL?: string;
+  GOOGLE_PRIVATE_KEY?: string;
 }
 
 export const ENV = {
@@ -25,6 +29,8 @@ export const ENV = {
   lineLoginChannelId: "",
   lineLoginChannelSecret: "",
   publicAppBaseUrl: "",
+  googleServiceAccountEmail: "",
+  googlePrivateKey: "",
 };
 
 export function bindEnv(env: WorkerEnv) {
@@ -36,4 +42,6 @@ export function bindEnv(env: WorkerEnv) {
   ENV.lineLoginChannelId = env.LINE_LOGIN_CHANNEL_ID ?? "";
   ENV.lineLoginChannelSecret = env.LINE_LOGIN_CHANNEL_SECRET ?? "";
   ENV.publicAppBaseUrl = env.PUBLIC_APP_BASE_URL ?? "";
+  ENV.googleServiceAccountEmail = env.GOOGLE_SERVICE_ACCOUNT_EMAIL ?? "";
+  ENV.googlePrivateKey = env.GOOGLE_PRIVATE_KEY ?? "";
 }
