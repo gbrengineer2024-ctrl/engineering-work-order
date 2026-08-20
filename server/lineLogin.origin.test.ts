@@ -1,16 +1,19 @@
 import { describe, expect, it } from "vitest";
+import type { Request } from "express";
 import { getLineCallbackUri } from "./lineLogin";
 
 function requestLike({ host, protocol = "http", forwardedProto }: { host: string; protocol?: string; forwardedProto?: string }) {
-  const headers: Record<string, string> = {};
-  if (forwardedProto) headers["x-forwarded-proto"] = forwardedProto;
-  return new Request(`${protocol}://${host}/`, { headers });
+  return {
+    protocol,
+    headers: forwardedProto ? { "x-forwarded-proto": forwardedProto } : {},
+    get: (name: string) => name.toLowerCase() === "host" ? host : undefined,
+  } as unknown as Request;
 }
 
 describe("LINE Login callback URI", () => {
-  it("uses HTTPS for a public host even when the Worker sees plain HTTP internally", () => {
-    expect(getLineCallbackUri(requestLike({ host: "hotel.example.workers.dev" })))
-      .toBe("https://hotel.example.workers.dev/api/auth/line/callback");
+  it("uses HTTPS for a public proxy host even when Express receives HTTP internally", () => {
+    expect(getLineCallbackUri(requestLike({ host: "3000-example.sg1.manus.computer" })))
+      .toBe("https://3000-example.sg1.manus.computer/api/auth/line/callback");
   });
 
   it("uses the forwarded public protocol when it is supplied", () => {

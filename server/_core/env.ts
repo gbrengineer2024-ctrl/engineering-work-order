@@ -1,39 +1,12 @@
-// Cloudflare Workers have no persistent process.env. Bindings (D1, R2) and
-// vars/secrets arrive per-request via the `env` object passed to the fetch
-// handler. bindEnv() copies them onto this mutable ENV object once at the
-// start of every request (see server/index.ts), so the rest of the app can
-// keep doing `import { ENV } from "./env"` exactly like before.
-export interface WorkerEnv {
-  DB: D1Database;
-  BUCKET: R2Bucket;
-  VITE_APP_ID?: string;
-  JWT_SECRET: string;
-  OWNER_OPEN_ID?: string;
-  OAUTH_SERVER_URL?: string;
-  LINE_LOGIN_CHANNEL_ID?: string;
-  LINE_LOGIN_CHANNEL_SECRET?: string;
-  PUBLIC_APP_BASE_URL?: string;
-  ASSETS?: Fetcher;
-}
-
 export const ENV = {
-  appId: "",
-  cookieSecret: "",
-  ownerOpenId: "",
-  isProduction: true,
-  oAuthServerUrl: "",
-  lineLoginChannelId: "",
-  lineLoginChannelSecret: "",
-  publicAppBaseUrl: "",
+  appId: process.env.VITE_APP_ID ?? "",
+  cookieSecret: process.env.JWT_SECRET ?? "",
+  databaseUrl: process.env.DATABASE_URL ?? "",
+  oAuthServerUrl: process.env.OAUTH_SERVER_URL ?? "",
+  ownerOpenId: process.env.OWNER_OPEN_ID ?? "",
+  isProduction: process.env.NODE_ENV === "production",
+  forgeApiUrl: process.env.BUILT_IN_FORGE_API_URL ?? "",
+  forgeApiKey: process.env.BUILT_IN_FORGE_API_KEY ?? "",
+  lineLoginChannelId: process.env.LINE_LOGIN_CHANNEL_ID ?? "",
+  lineLoginChannelSecret: process.env.LINE_LOGIN_CHANNEL_SECRET ?? "",
 };
-
-export function bindEnv(env: WorkerEnv) {
-  ENV.appId = env.VITE_APP_ID ?? "";
-  ENV.cookieSecret = env.JWT_SECRET ?? "";
-  ENV.ownerOpenId = env.OWNER_OPEN_ID ?? "";
-  ENV.isProduction = true;
-  ENV.oAuthServerUrl = env.OAUTH_SERVER_URL ?? "";
-  ENV.lineLoginChannelId = env.LINE_LOGIN_CHANNEL_ID ?? "";
-  ENV.lineLoginChannelSecret = env.LINE_LOGIN_CHANNEL_SECRET ?? "";
-  ENV.publicAppBaseUrl = env.PUBLIC_APP_BASE_URL ?? "";
-}

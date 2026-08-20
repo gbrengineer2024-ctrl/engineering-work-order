@@ -1,36 +1,36 @@
 {
-  "version": "6",
-  "dialect": "sqlite",
-  "id": "33fa0f79-fd93-4ebb-a587-2ad1eb0f80ae",
-  "prevId": "00000000-0000-0000-0000-000000000000",
+  "version": "5",
+  "dialect": "mysql",
+  "id": "80112ad6-0652-4fb2-b185-ddc32af52e92",
+  "prevId": "6db1236b-64b1-4115-b696-5628eca6c613",
   "tables": {
     "attachments": {
       "name": "attachments",
       "columns": {
         "id": {
           "name": "id",
-          "type": "integer",
-          "primaryKey": true,
+          "type": "int",
+          "primaryKey": false,
           "notNull": true,
           "autoincrement": true
         },
         "attachmentId": {
           "name": "attachmentId",
-          "type": "text",
+          "type": "varchar(40)",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
         },
         "woId": {
           "name": "woId",
-          "type": "text",
+          "type": "varchar(40)",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
         },
         "attachmentType": {
           "name": "attachmentType",
-          "type": "text",
+          "type": "enum('BEFORE','AFTER','OTHER')",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
@@ -38,7 +38,7 @@
         },
         "fileName": {
           "name": "fileName",
-          "type": "text",
+          "type": "varchar(255)",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
@@ -52,42 +52,35 @@
         },
         "mimeType": {
           "name": "mimeType",
-          "type": "text",
+          "type": "varchar(120)",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
         },
         "fileSize": {
           "name": "fileSize",
-          "type": "integer",
+          "type": "bigint",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
         },
         "uploadedBy": {
           "name": "uploadedBy",
-          "type": "text",
+          "type": "varchar(40)",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
         },
         "createdAt": {
           "name": "createdAt",
-          "type": "integer",
+          "type": "timestamp",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "(unixepoch())"
+          "default": "(now())"
         }
       },
       "indexes": {
-        "attachments_attachmentId_unique": {
-          "name": "attachments_attachmentId_unique",
-          "columns": [
-            "attachmentId"
-          ],
-          "isUnique": true
-        },
         "attachments_wo_idx": {
           "name": "attachments_wo_idx",
           "columns": [
@@ -105,30 +98,44 @@
         }
       },
       "foreignKeys": {},
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "checkConstraints": {}
+      "compositePrimaryKeys": {
+        "attachments_id": {
+          "name": "attachments_id",
+          "columns": [
+            "id"
+          ]
+        }
+      },
+      "uniqueConstraints": {
+        "attachments_attachmentId_unique": {
+          "name": "attachments_attachmentId_unique",
+          "columns": [
+            "attachmentId"
+          ]
+        }
+      },
+      "checkConstraint": {}
     },
     "google_drive_integration_settings": {
       "name": "google_drive_integration_settings",
       "columns": {
         "id": {
           "name": "id",
-          "type": "integer",
-          "primaryKey": true,
+          "type": "int",
+          "primaryKey": false,
           "notNull": true,
           "autoincrement": true
         },
         "integrationKey": {
           "name": "integrationKey",
-          "type": "text",
+          "type": "varchar(40)",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
         },
         "isEnabled": {
           "name": "isEnabled",
-          "type": "integer",
+          "type": "boolean",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
@@ -136,7 +143,7 @@
         },
         "rootFolderId": {
           "name": "rootFolderId",
-          "type": "text",
+          "type": "varchar(160)",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
@@ -150,62 +157,69 @@
         },
         "updatedByUserId": {
           "name": "updatedByUserId",
-          "type": "text",
+          "type": "varchar(64)",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
         },
         "createdAt": {
           "name": "createdAt",
-          "type": "integer",
+          "type": "timestamp",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "(unixepoch())"
+          "default": "(now())"
         },
         "updatedAt": {
           "name": "updatedAt",
-          "type": "integer",
+          "type": "timestamp",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "(unixepoch())"
+          "onUpdate": true,
+          "default": "(now())"
         }
       },
-      "indexes": {
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {
+        "google_drive_integration_settings_id": {
+          "name": "google_drive_integration_settings_id",
+          "columns": [
+            "id"
+          ]
+        }
+      },
+      "uniqueConstraints": {
         "google_drive_integration_settings_integrationKey_unique": {
           "name": "google_drive_integration_settings_integrationKey_unique",
           "columns": [
             "integrationKey"
-          ],
-          "isUnique": true
+          ]
         }
       },
-      "foreignKeys": {},
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "checkConstraints": {}
+      "checkConstraint": {}
     },
     "line_integration_settings": {
       "name": "line_integration_settings",
       "columns": {
         "id": {
           "name": "id",
-          "type": "integer",
-          "primaryKey": true,
+          "type": "int",
+          "primaryKey": false,
           "notNull": true,
           "autoincrement": true
         },
         "integrationKey": {
           "name": "integrationKey",
-          "type": "text",
+          "type": "varchar(40)",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
         },
         "isEnabled": {
           "name": "isEnabled",
-          "type": "integer",
+          "type": "boolean",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
@@ -213,7 +227,7 @@
         },
         "alertUrgent": {
           "name": "alertUrgent",
-          "type": "integer",
+          "type": "boolean",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
@@ -221,7 +235,7 @@
         },
         "alertOverdue": {
           "name": "alertOverdue",
-          "type": "integer",
+          "type": "boolean",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
@@ -243,28 +257,28 @@
         },
         "updatedByUserId": {
           "name": "updatedByUserId",
-          "type": "text",
+          "type": "varchar(64)",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
         },
         "lastTestAt": {
           "name": "lastTestAt",
-          "type": "integer",
+          "type": "timestamp",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
         },
         "lastDeliveryAt": {
           "name": "lastDeliveryAt",
-          "type": "integer",
+          "type": "timestamp",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
         },
         "lastDeliveryStatus": {
           "name": "lastDeliveryStatus",
-          "type": "text",
+          "type": "varchar(30)",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
@@ -278,55 +292,62 @@
         },
         "createdAt": {
           "name": "createdAt",
-          "type": "integer",
+          "type": "timestamp",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "(unixepoch())"
+          "default": "(now())"
         },
         "updatedAt": {
           "name": "updatedAt",
-          "type": "integer",
+          "type": "timestamp",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "(unixepoch())"
+          "onUpdate": true,
+          "default": "(now())"
         }
       },
-      "indexes": {
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {
+        "line_integration_settings_id": {
+          "name": "line_integration_settings_id",
+          "columns": [
+            "id"
+          ]
+        }
+      },
+      "uniqueConstraints": {
         "line_integration_settings_integrationKey_unique": {
           "name": "line_integration_settings_integrationKey_unique",
           "columns": [
             "integrationKey"
-          ],
-          "isUnique": true
+          ]
         }
       },
-      "foreignKeys": {},
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "checkConstraints": {}
+      "checkConstraint": {}
     },
     "locations": {
       "name": "locations",
       "columns": {
         "id": {
           "name": "id",
-          "type": "integer",
-          "primaryKey": true,
+          "type": "int",
+          "primaryKey": false,
           "notNull": true,
           "autoincrement": true
         },
         "locationId": {
           "name": "locationId",
-          "type": "text",
+          "type": "varchar(40)",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
         },
         "propertyCode": {
           "name": "propertyCode",
-          "type": "text",
+          "type": "varchar(40)",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
@@ -334,49 +355,49 @@
         },
         "building": {
           "name": "building",
-          "type": "text",
+          "type": "varchar(120)",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
         },
         "floor": {
           "name": "floor",
-          "type": "text",
+          "type": "varchar(30)",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
         },
         "areaType": {
           "name": "areaType",
-          "type": "text",
+          "type": "varchar(60)",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
         },
         "roomNo": {
           "name": "roomNo",
-          "type": "text",
+          "type": "varchar(30)",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
         },
         "areaName": {
           "name": "areaName",
-          "type": "text",
+          "type": "varchar(160)",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
         },
         "qrCode": {
           "name": "qrCode",
-          "type": "text",
+          "type": "varchar(160)",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
         },
         "isGuestArea": {
           "name": "isGuestArea",
-          "type": "integer",
+          "type": "boolean",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
@@ -384,7 +405,7 @@
         },
         "isActive": {
           "name": "isActive",
-          "type": "integer",
+          "type": "boolean",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
@@ -399,28 +420,14 @@
         },
         "createdAt": {
           "name": "createdAt",
-          "type": "integer",
+          "type": "timestamp",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "(unixepoch())"
+          "default": "(now())"
         }
       },
       "indexes": {
-        "locations_locationId_unique": {
-          "name": "locations_locationId_unique",
-          "columns": [
-            "locationId"
-          ],
-          "isUnique": true
-        },
-        "locations_qrCode_unique": {
-          "name": "locations_qrCode_unique",
-          "columns": [
-            "qrCode"
-          ],
-          "isUnique": true
-        },
         "locations_area_type_idx": {
           "name": "locations_area_type_idx",
           "columns": [
@@ -430,58 +437,78 @@
         }
       },
       "foreignKeys": {},
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "checkConstraints": {}
+      "compositePrimaryKeys": {
+        "locations_id": {
+          "name": "locations_id",
+          "columns": [
+            "id"
+          ]
+        }
+      },
+      "uniqueConstraints": {
+        "locations_locationId_unique": {
+          "name": "locations_locationId_unique",
+          "columns": [
+            "locationId"
+          ]
+        },
+        "locations_qrCode_unique": {
+          "name": "locations_qrCode_unique",
+          "columns": [
+            "qrCode"
+          ]
+        }
+      },
+      "checkConstraint": {}
     },
     "lookups": {
       "name": "lookups",
       "columns": {
         "id": {
           "name": "id",
-          "type": "integer",
-          "primaryKey": true,
+          "type": "int",
+          "primaryKey": false,
           "notNull": true,
           "autoincrement": true
         },
         "lookupId": {
           "name": "lookupId",
-          "type": "text",
+          "type": "varchar(40)",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
         },
         "lookupType": {
           "name": "lookupType",
-          "type": "text",
+          "type": "varchar(40)",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
         },
         "code": {
           "name": "code",
-          "type": "text",
+          "type": "varchar(60)",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
         },
         "labelTh": {
           "name": "labelTh",
-          "type": "text",
+          "type": "varchar(160)",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
         },
         "labelEn": {
           "name": "labelEn",
-          "type": "text",
+          "type": "varchar(160)",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
         },
         "sortOrder": {
           "name": "sortOrder",
-          "type": "integer",
+          "type": "int",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
@@ -489,7 +516,7 @@
         },
         "isActive": {
           "name": "isActive",
-          "type": "integer",
+          "type": "boolean",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
@@ -497,14 +524,14 @@
         },
         "slaHours": {
           "name": "slaHours",
-          "type": "text",
+          "type": "decimal(8,2)",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
         },
         "notifyRole": {
           "name": "notifyRole",
-          "type": "text",
+          "type": "varchar(40)",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
@@ -518,13 +545,6 @@
         }
       },
       "indexes": {
-        "lookups_lookupId_unique": {
-          "name": "lookups_lookupId_unique",
-          "columns": [
-            "lookupId"
-          ],
-          "isUnique": true
-        },
         "lookups_type_idx": {
           "name": "lookups_type_idx",
           "columns": [
@@ -541,44 +561,58 @@
         }
       },
       "foreignKeys": {},
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "checkConstraints": {}
+      "compositePrimaryKeys": {
+        "lookups_id": {
+          "name": "lookups_id",
+          "columns": [
+            "id"
+          ]
+        }
+      },
+      "uniqueConstraints": {
+        "lookups_lookupId_unique": {
+          "name": "lookups_lookupId_unique",
+          "columns": [
+            "lookupId"
+          ]
+        }
+      },
+      "checkConstraint": {}
     },
     "maintenance_users": {
       "name": "maintenance_users",
       "columns": {
         "id": {
           "name": "id",
-          "type": "integer",
-          "primaryKey": true,
+          "type": "int",
+          "primaryKey": false,
           "notNull": true,
           "autoincrement": true
         },
         "userId": {
           "name": "userId",
-          "type": "text",
+          "type": "varchar(40)",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
         },
         "lineUserId": {
           "name": "lineUserId",
-          "type": "text",
+          "type": "varchar(80)",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
         },
         "employeeId": {
           "name": "employeeId",
-          "type": "text",
+          "type": "varchar(40)",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
         },
         "displayName": {
           "name": "displayName",
-          "type": "text",
+          "type": "varchar(160)",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
@@ -592,7 +626,7 @@
         },
         "roleCode": {
           "name": "roleCode",
-          "type": "text",
+          "type": "enum('ADMIN','REPORTER','SUPERVISOR','TECHNICIAN')",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
@@ -600,35 +634,35 @@
         },
         "department": {
           "name": "department",
-          "type": "text",
+          "type": "varchar(120)",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
         },
         "phone": {
           "name": "phone",
-          "type": "text",
+          "type": "varchar(40)",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
         },
         "email": {
           "name": "email",
-          "type": "text",
+          "type": "varchar(320)",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
         },
         "defaultLocationId": {
           "name": "defaultLocationId",
-          "type": "text",
+          "type": "varchar(40)",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
         },
         "isActive": {
           "name": "isActive",
-          "type": "integer",
+          "type": "boolean",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
@@ -636,22 +670,22 @@
         },
         "createdAt": {
           "name": "createdAt",
-          "type": "integer",
+          "type": "timestamp",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "(unixepoch())"
+          "default": "(now())"
         },
         "lastLoginAt": {
           "name": "lastLoginAt",
-          "type": "integer",
+          "type": "timestamp",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
         },
         "consentVersion": {
           "name": "consentVersion",
-          "type": "text",
+          "type": "varchar(40)",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
@@ -665,13 +699,6 @@
         }
       },
       "indexes": {
-        "maintenance_users_userId_unique": {
-          "name": "maintenance_users_userId_unique",
-          "columns": [
-            "userId"
-          ],
-          "isUnique": true
-        },
         "maintenance_users_role_idx": {
           "name": "maintenance_users_role_idx",
           "columns": [
@@ -681,44 +708,58 @@
         }
       },
       "foreignKeys": {},
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "checkConstraints": {}
+      "compositePrimaryKeys": {
+        "maintenance_users_id": {
+          "name": "maintenance_users_id",
+          "columns": [
+            "id"
+          ]
+        }
+      },
+      "uniqueConstraints": {
+        "maintenance_users_userId_unique": {
+          "name": "maintenance_users_userId_unique",
+          "columns": [
+            "userId"
+          ]
+        }
+      },
+      "checkConstraint": {}
     },
     "notifications": {
       "name": "notifications",
       "columns": {
         "id": {
           "name": "id",
-          "type": "integer",
-          "primaryKey": true,
+          "type": "int",
+          "primaryKey": false,
           "notNull": true,
           "autoincrement": true
         },
         "notificationId": {
           "name": "notificationId",
-          "type": "text",
+          "type": "varchar(40)",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
         },
         "recipientUserId": {
           "name": "recipientUserId",
-          "type": "text",
+          "type": "varchar(40)",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
         },
         "woId": {
           "name": "woId",
-          "type": "text",
+          "type": "varchar(40)",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
         },
         "channel": {
           "name": "channel",
-          "type": "text",
+          "type": "varchar(40)",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
@@ -726,7 +767,7 @@
         },
         "title": {
           "name": "title",
-          "type": "text",
+          "type": "varchar(200)",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
@@ -740,7 +781,7 @@
         },
         "isRead": {
           "name": "isRead",
-          "type": "integer",
+          "type": "boolean",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
@@ -748,28 +789,21 @@
         },
         "sentAt": {
           "name": "sentAt",
-          "type": "integer",
+          "type": "timestamp",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
         },
         "createdAt": {
           "name": "createdAt",
-          "type": "integer",
+          "type": "timestamp",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "(unixepoch())"
+          "default": "(now())"
         }
       },
       "indexes": {
-        "notifications_notificationId_unique": {
-          "name": "notifications_notificationId_unique",
-          "columns": [
-            "notificationId"
-          ],
-          "isUnique": true
-        },
         "notifications_recipient_idx": {
           "name": "notifications_recipient_idx",
           "columns": [
@@ -786,93 +820,107 @@
         }
       },
       "foreignKeys": {},
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "checkConstraints": {}
+      "compositePrimaryKeys": {
+        "notifications_id": {
+          "name": "notifications_id",
+          "columns": [
+            "id"
+          ]
+        }
+      },
+      "uniqueConstraints": {
+        "notifications_notificationId_unique": {
+          "name": "notifications_notificationId_unique",
+          "columns": [
+            "notificationId"
+          ]
+        }
+      },
+      "checkConstraint": {}
     },
     "part_issues": {
       "name": "part_issues",
       "columns": {
         "id": {
           "name": "id",
-          "type": "integer",
-          "primaryKey": true,
+          "type": "int",
+          "primaryKey": false,
           "notNull": true,
           "autoincrement": true
         },
         "issueId": {
           "name": "issueId",
-          "type": "text",
+          "type": "varchar(40)",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
         },
         "woId": {
           "name": "woId",
-          "type": "text",
+          "type": "varchar(40)",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
         },
         "issueAt": {
           "name": "issueAt",
-          "type": "integer",
+          "type": "timestamp",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
         },
         "requestedByUserId": {
           "name": "requestedByUserId",
-          "type": "text",
+          "type": "varchar(40)",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
         },
         "requestedByLineUserId": {
           "name": "requestedByLineUserId",
-          "type": "text",
+          "type": "varchar(80)",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
         },
         "approvedByUserId": {
           "name": "approvedByUserId",
-          "type": "text",
+          "type": "varchar(40)",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
         },
         "approvedAt": {
           "name": "approvedAt",
-          "type": "integer",
+          "type": "timestamp",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
         },
         "partId": {
           "name": "partId",
-          "type": "text",
+          "type": "varchar(40)",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
         },
         "partCode": {
           "name": "partCode",
-          "type": "text",
+          "type": "varchar(80)",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
         },
         "partNameTh": {
           "name": "partNameTh",
-          "type": "text",
+          "type": "varchar(200)",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
         },
         "qtyRequested": {
           "name": "qtyRequested",
-          "type": "integer",
+          "type": "int",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
@@ -880,7 +928,7 @@
         },
         "qtyApproved": {
           "name": "qtyApproved",
-          "type": "integer",
+          "type": "int",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
@@ -888,7 +936,7 @@
         },
         "qtyIssued": {
           "name": "qtyIssued",
-          "type": "integer",
+          "type": "int",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
@@ -896,14 +944,14 @@
         },
         "unit": {
           "name": "unit",
-          "type": "text",
+          "type": "varchar(20)",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
         },
         "unitCostThb": {
           "name": "unitCostThb",
-          "type": "text",
+          "type": "decimal(12,2)",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
@@ -911,7 +959,7 @@
         },
         "issueCostThb": {
           "name": "issueCostThb",
-          "type": "text",
+          "type": "decimal(12,2)",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
@@ -919,7 +967,7 @@
         },
         "issueStatus": {
           "name": "issueStatus",
-          "type": "text",
+          "type": "varchar(30)",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
@@ -927,21 +975,21 @@
         },
         "stockLocation": {
           "name": "stockLocation",
-          "type": "text",
+          "type": "varchar(80)",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
         },
         "usedAtLocationId": {
           "name": "usedAtLocationId",
-          "type": "text",
+          "type": "varchar(40)",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
         },
         "returnRequired": {
           "name": "returnRequired",
-          "type": "integer",
+          "type": "boolean",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
@@ -949,7 +997,7 @@
         },
         "returnQty": {
           "name": "returnQty",
-          "type": "integer",
+          "type": "int",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
@@ -964,29 +1012,23 @@
         },
         "createdAt": {
           "name": "createdAt",
-          "type": "integer",
+          "type": "timestamp",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "(unixepoch())"
+          "default": "(now())"
         },
         "updatedAt": {
           "name": "updatedAt",
-          "type": "integer",
+          "type": "timestamp",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "(unixepoch())"
+          "onUpdate": true,
+          "default": "(now())"
         }
       },
       "indexes": {
-        "part_issues_issueId_unique": {
-          "name": "part_issues_issueId_unique",
-          "columns": [
-            "issueId"
-          ],
-          "isUnique": true
-        },
         "part_issues_wo_idx": {
           "name": "part_issues_wo_idx",
           "columns": [
@@ -1010,86 +1052,100 @@
         }
       },
       "foreignKeys": {},
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "checkConstraints": {}
+      "compositePrimaryKeys": {
+        "part_issues_id": {
+          "name": "part_issues_id",
+          "columns": [
+            "id"
+          ]
+        }
+      },
+      "uniqueConstraints": {
+        "part_issues_issueId_unique": {
+          "name": "part_issues_issueId_unique",
+          "columns": [
+            "issueId"
+          ]
+        }
+      },
+      "checkConstraint": {}
     },
     "parts": {
       "name": "parts",
       "columns": {
         "id": {
           "name": "id",
-          "type": "integer",
-          "primaryKey": true,
+          "type": "int",
+          "primaryKey": false,
           "notNull": true,
           "autoincrement": true
         },
         "partId": {
           "name": "partId",
-          "type": "text",
+          "type": "varchar(40)",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
         },
         "partCode": {
           "name": "partCode",
-          "type": "text",
+          "type": "varchar(80)",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
         },
         "partNameTh": {
           "name": "partNameTh",
-          "type": "text",
+          "type": "varchar(200)",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
         },
         "partNameEn": {
           "name": "partNameEn",
-          "type": "text",
+          "type": "varchar(200)",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
         },
         "categoryCode": {
           "name": "categoryCode",
-          "type": "text",
+          "type": "varchar(60)",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
         },
         "unit": {
           "name": "unit",
-          "type": "text",
+          "type": "varchar(20)",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
         },
         "brandModel": {
           "name": "brandModel",
-          "type": "text",
+          "type": "varchar(200)",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
         },
         "supplierName": {
           "name": "supplierName",
-          "type": "text",
+          "type": "varchar(200)",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
         },
         "storageLocation": {
           "name": "storageLocation",
-          "type": "text",
+          "type": "varchar(80)",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
         },
         "minStockQty": {
           "name": "minStockQty",
-          "type": "integer",
+          "type": "int",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
@@ -1097,7 +1153,7 @@
         },
         "currentStockQty": {
           "name": "currentStockQty",
-          "type": "integer",
+          "type": "int",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
@@ -1105,7 +1161,7 @@
         },
         "reservedQty": {
           "name": "reservedQty",
-          "type": "integer",
+          "type": "int",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
@@ -1113,7 +1169,7 @@
         },
         "availableQty": {
           "name": "availableQty",
-          "type": "integer",
+          "type": "int",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
@@ -1121,7 +1177,7 @@
         },
         "unitCostThb": {
           "name": "unitCostThb",
-          "type": "text",
+          "type": "decimal(12,2)",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
@@ -1129,7 +1185,7 @@
         },
         "reorderLeadDays": {
           "name": "reorderLeadDays",
-          "type": "integer",
+          "type": "int",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
@@ -1137,7 +1193,7 @@
         },
         "isActive": {
           "name": "isActive",
-          "type": "integer",
+          "type": "boolean",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
@@ -1145,7 +1201,7 @@
         },
         "lastCountedAt": {
           "name": "lastCountedAt",
-          "type": "integer",
+          "type": "timestamp",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
@@ -1159,36 +1215,23 @@
         },
         "createdAt": {
           "name": "createdAt",
-          "type": "integer",
+          "type": "timestamp",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "(unixepoch())"
+          "default": "(now())"
         },
         "updatedAt": {
           "name": "updatedAt",
-          "type": "integer",
+          "type": "timestamp",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "(unixepoch())"
+          "onUpdate": true,
+          "default": "(now())"
         }
       },
       "indexes": {
-        "parts_partId_unique": {
-          "name": "parts_partId_unique",
-          "columns": [
-            "partId"
-          ],
-          "isUnique": true
-        },
-        "parts_partCode_unique": {
-          "name": "parts_partCode_unique",
-          "columns": [
-            "partCode"
-          ],
-          "isUnique": true
-        },
         "parts_category_idx": {
           "name": "parts_category_idx",
           "columns": [
@@ -1205,59 +1248,79 @@
         }
       },
       "foreignKeys": {},
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "checkConstraints": {}
+      "compositePrimaryKeys": {
+        "parts_id": {
+          "name": "parts_id",
+          "columns": [
+            "id"
+          ]
+        }
+      },
+      "uniqueConstraints": {
+        "parts_partId_unique": {
+          "name": "parts_partId_unique",
+          "columns": [
+            "partId"
+          ]
+        },
+        "parts_partCode_unique": {
+          "name": "parts_partCode_unique",
+          "columns": [
+            "partCode"
+          ]
+        }
+      },
+      "checkConstraint": {}
     },
     "status_logs": {
       "name": "status_logs",
       "columns": {
         "id": {
           "name": "id",
-          "type": "integer",
-          "primaryKey": true,
+          "type": "int",
+          "primaryKey": false,
           "notNull": true,
           "autoincrement": true
         },
         "logId": {
           "name": "logId",
-          "type": "text",
+          "type": "varchar(40)",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
         },
         "woId": {
           "name": "woId",
-          "type": "text",
+          "type": "varchar(40)",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
         },
         "changedAt": {
           "name": "changedAt",
-          "type": "integer",
+          "type": "timestamp",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "(unixepoch())"
+          "default": "(now())"
         },
         "fromStatus": {
           "name": "fromStatus",
-          "type": "text",
+          "type": "varchar(40)",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
         },
         "toStatus": {
           "name": "toStatus",
-          "type": "text",
+          "type": "varchar(40)",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
         },
         "actorUserId": {
           "name": "actorUserId",
-          "type": "text",
+          "type": "varchar(40)",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
@@ -1271,14 +1334,14 @@
         },
         "nextAction": {
           "name": "nextAction",
-          "type": "text",
+          "type": "varchar(160)",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
         },
         "isCustomerVisible": {
           "name": "isCustomerVisible",
-          "type": "integer",
+          "type": "boolean",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
@@ -1286,13 +1349,6 @@
         }
       },
       "indexes": {
-        "status_logs_logId_unique": {
-          "name": "status_logs_logId_unique",
-          "columns": [
-            "logId"
-          ],
-          "isUnique": true
-        },
         "status_logs_wo_idx": {
           "name": "status_logs_wo_idx",
           "columns": [
@@ -1309,44 +1365,58 @@
         }
       },
       "foreignKeys": {},
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "checkConstraints": {}
+      "compositePrimaryKeys": {
+        "status_logs_id": {
+          "name": "status_logs_id",
+          "columns": [
+            "id"
+          ]
+        }
+      },
+      "uniqueConstraints": {
+        "status_logs_logId_unique": {
+          "name": "status_logs_logId_unique",
+          "columns": [
+            "logId"
+          ]
+        }
+      },
+      "checkConstraint": {}
     },
     "technicians": {
       "name": "technicians",
       "columns": {
         "id": {
           "name": "id",
-          "type": "integer",
-          "primaryKey": true,
+          "type": "int",
+          "primaryKey": false,
           "notNull": true,
           "autoincrement": true
         },
         "techId": {
           "name": "techId",
-          "type": "text",
+          "type": "varchar(40)",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
         },
         "userId": {
           "name": "userId",
-          "type": "text",
+          "type": "varchar(40)",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
         },
         "techName": {
           "name": "techName",
-          "type": "text",
+          "type": "varchar(160)",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
         },
         "teamCode": {
           "name": "teamCode",
-          "type": "text",
+          "type": "varchar(60)",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
@@ -1360,28 +1430,28 @@
         },
         "shiftCode": {
           "name": "shiftCode",
-          "type": "text",
+          "type": "varchar(40)",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
         },
         "phone": {
           "name": "phone",
-          "type": "text",
+          "type": "varchar(40)",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
         },
         "lineUserId": {
           "name": "lineUserId",
-          "type": "text",
+          "type": "varchar(80)",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
         },
         "isActive": {
           "name": "isActive",
-          "type": "integer",
+          "type": "boolean",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
@@ -1389,7 +1459,7 @@
         },
         "availabilityStatus": {
           "name": "availabilityStatus",
-          "type": "text",
+          "type": "enum('ON_DUTY','OFF_DUTY','ON_LEAVE')",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
@@ -1397,7 +1467,7 @@
         },
         "maxOpenJobs": {
           "name": "maxOpenJobs",
-          "type": "integer",
+          "type": "int",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
@@ -1405,7 +1475,7 @@
         },
         "currentOpenJobs": {
           "name": "currentOpenJobs",
-          "type": "integer",
+          "type": "int",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
@@ -1420,13 +1490,6 @@
         }
       },
       "indexes": {
-        "technicians_techId_unique": {
-          "name": "technicians_techId_unique",
-          "columns": [
-            "techId"
-          ],
-          "isUnique": true
-        },
         "technicians_team_idx": {
           "name": "technicians_team_idx",
           "columns": [
@@ -1436,23 +1499,37 @@
         }
       },
       "foreignKeys": {},
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "checkConstraints": {}
+      "compositePrimaryKeys": {
+        "technicians_id": {
+          "name": "technicians_id",
+          "columns": [
+            "id"
+          ]
+        }
+      },
+      "uniqueConstraints": {
+        "technicians_techId_unique": {
+          "name": "technicians_techId_unique",
+          "columns": [
+            "techId"
+          ]
+        }
+      },
+      "checkConstraint": {}
     },
     "users": {
       "name": "users",
       "columns": {
         "id": {
           "name": "id",
-          "type": "integer",
-          "primaryKey": true,
+          "type": "int",
+          "primaryKey": false,
           "notNull": true,
           "autoincrement": true
         },
         "openId": {
           "name": "openId",
-          "type": "text",
+          "type": "varchar(64)",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
@@ -1466,21 +1543,21 @@
         },
         "email": {
           "name": "email",
-          "type": "text",
+          "type": "varchar(320)",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
         },
         "loginMethod": {
           "name": "loginMethod",
-          "type": "text",
+          "type": "varchar(64)",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
         },
         "role": {
           "name": "role",
-          "type": "text",
+          "type": "enum('ADMIN','REPORTER','SUPERVISOR','TECHNICIAN')",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
@@ -1488,113 +1565,120 @@
         },
         "createdAt": {
           "name": "createdAt",
-          "type": "integer",
+          "type": "timestamp",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "(unixepoch())"
+          "default": "(now())"
         },
         "updatedAt": {
           "name": "updatedAt",
-          "type": "integer",
+          "type": "timestamp",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "(unixepoch())"
+          "onUpdate": true,
+          "default": "(now())"
         },
         "lastSignedIn": {
           "name": "lastSignedIn",
-          "type": "integer",
+          "type": "timestamp",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "(unixepoch())"
+          "default": "(now())"
         }
       },
-      "indexes": {
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {
+        "users_id": {
+          "name": "users_id",
+          "columns": [
+            "id"
+          ]
+        }
+      },
+      "uniqueConstraints": {
         "users_openId_unique": {
           "name": "users_openId_unique",
           "columns": [
             "openId"
-          ],
-          "isUnique": true
+          ]
         }
       },
-      "foreignKeys": {},
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "checkConstraints": {}
+      "checkConstraint": {}
     },
     "work_orders": {
       "name": "work_orders",
       "columns": {
         "id": {
           "name": "id",
-          "type": "integer",
-          "primaryKey": true,
+          "type": "int",
+          "primaryKey": false,
           "notNull": true,
           "autoincrement": true
         },
         "woId": {
           "name": "woId",
-          "type": "text",
+          "type": "varchar(40)",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
         },
         "createdAt": {
           "name": "createdAt",
-          "type": "integer",
+          "type": "timestamp",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "(unixepoch())"
+          "default": "(now())"
         },
         "requesterUserId": {
           "name": "requesterUserId",
-          "type": "text",
+          "type": "varchar(40)",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
         },
         "lineUserId": {
           "name": "lineUserId",
-          "type": "text",
+          "type": "varchar(80)",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
         },
         "locationId": {
           "name": "locationId",
-          "type": "text",
+          "type": "varchar(40)",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
         },
         "categoryCode": {
           "name": "categoryCode",
-          "type": "text",
+          "type": "varchar(60)",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
         },
         "subCategory": {
           "name": "subCategory",
-          "type": "text",
+          "type": "varchar(160)",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
         },
         "priorityCode": {
           "name": "priorityCode",
-          "type": "text",
+          "type": "varchar(40)",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
         },
         "statusCode": {
           "name": "statusCode",
-          "type": "text",
+          "type": "enum('OPEN','ASSIGNED','IN_PROGRESS','PENDING_PARTS','COMPLETED','CLOSED')",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
@@ -1609,63 +1693,63 @@
         },
         "assignedTechId": {
           "name": "assignedTechId",
-          "type": "text",
+          "type": "varchar(40)",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
         },
         "assignedTeam": {
           "name": "assignedTeam",
-          "type": "text",
+          "type": "varchar(80)",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
         },
         "slaHours": {
           "name": "slaHours",
-          "type": "text",
+          "type": "decimal(8,2)",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
         },
         "dueAt": {
           "name": "dueAt",
-          "type": "integer",
+          "type": "timestamp",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
         },
         "startedAt": {
           "name": "startedAt",
-          "type": "integer",
+          "type": "timestamp",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
         },
         "completedAt": {
           "name": "completedAt",
-          "type": "integer",
+          "type": "timestamp",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
         },
         "costEstimateThb": {
           "name": "costEstimateThb",
-          "type": "text",
+          "type": "decimal(12,2)",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
         },
         "actualCostThb": {
           "name": "actualCostThb",
-          "type": "text",
+          "type": "decimal(12,2)",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
         },
         "sourceChannel": {
           "name": "sourceChannel",
-          "type": "text",
+          "type": "varchar(40)",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
@@ -1673,7 +1757,7 @@
         },
         "customerVisible": {
           "name": "customerVisible",
-          "type": "integer",
+          "type": "boolean",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
@@ -1681,7 +1765,7 @@
         },
         "ratingOneToFive": {
           "name": "ratingOneToFive",
-          "type": "integer",
+          "type": "int",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
@@ -1695,21 +1779,15 @@
         },
         "updatedAt": {
           "name": "updatedAt",
-          "type": "integer",
+          "type": "timestamp",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "(unixepoch())"
+          "onUpdate": true,
+          "default": "(now())"
         }
       },
       "indexes": {
-        "work_orders_woId_unique": {
-          "name": "work_orders_woId_unique",
-          "columns": [
-            "woId"
-          ],
-          "isUnique": true
-        },
         "work_orders_status_idx": {
           "name": "work_orders_status_idx",
           "columns": [
@@ -1747,19 +1825,33 @@
         }
       },
       "foreignKeys": {},
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "checkConstraints": {}
+      "compositePrimaryKeys": {
+        "work_orders_id": {
+          "name": "work_orders_id",
+          "columns": [
+            "id"
+          ]
+        }
+      },
+      "uniqueConstraints": {
+        "work_orders_woId_unique": {
+          "name": "work_orders_woId_unique",
+          "columns": [
+            "woId"
+          ]
+        }
+      },
+      "checkConstraint": {}
     }
   },
   "views": {},
-  "enums": {},
   "_meta": {
     "schemas": {},
     "tables": {},
     "columns": {}
   },
   "internal": {
+    "tables": {},
     "indexes": {}
   }
 }

@@ -7,36 +7,24 @@ vi.mock("./db", async importOriginal => {
     ...actual,
     hasWorkOrderAttachmentType: vi.fn(),
     addStatusLog: vi.fn(),
-    getWorkOrder: vi.fn(),
   };
 });
 
 import { appRouter } from "./routers";
-import { addStatusLog, getWorkOrder, hasWorkOrderAttachmentType } from "./db";
+import { addStatusLog, hasWorkOrderAttachmentType } from "./db";
 
 function createTechnicianContext(): TrpcContext {
   return {
     user: { id: 1, openId: "line-tech-01", name: "ช่างหนึ่ง", email: "tech@example.com", loginMethod: "test", role: "TECHNICIAN", createdAt: new Date(), updatedAt: new Date(), lastSignedIn: new Date() },
-    req: new Request("https://example.com"),
-    responseCookies: [],
+    req: { protocol: "https", headers: {} } as TrpcContext["req"],
+    res: {} as TrpcContext["res"],
   };
 }
-
-const sampleWorkOrderDetail = {
-  workOrder: { woId: "WO-AFTER-TEST", statusCode: "IN_PROGRESS", assignedTechId: "line-tech-01", requesterUserId: "line-reporter-01" },
-  logs: [],
-  attachments: [],
-  notifications: [],
-  requester: null,
-} as never;
 
 describe("รูปหลังงานก่อนปิดสถานะ COMPLETED", () => {
   const baseInput = { woId: "WO-AFTER-TEST", fromStatus: "IN_PROGRESS" as const, toStatus: "COMPLETED" as const, actorUserId: "client-supplied-id", comment: "ดำเนินการเสร็จแล้ว" };
 
-  beforeEach(() => {
-    vi.clearAllMocks();
-    vi.mocked(getWorkOrder).mockResolvedValue(sampleWorkOrderDetail);
-  });
+  beforeEach(() => vi.clearAllMocks());
 
   it("ปฏิเสธการเปลี่ยนเป็น COMPLETED เมื่อไม่มีรูป AFTER", async () => {
     vi.mocked(hasWorkOrderAttachmentType).mockResolvedValue(false);
@@ -57,10 +45,6 @@ describe("รูปหลังงานก่อนปิดสถานะ COM
   });
 
   it("ไม่ต้องตรวจรูป AFTER เมื่อช่างเริ่มดำเนินงาน", async () => {
-    vi.mocked(getWorkOrder).mockResolvedValue({
-      ...sampleWorkOrderDetail,
-      workOrder: { ...sampleWorkOrderDetail.workOrder, statusCode: "ASSIGNED" },
-    } as never);
     vi.mocked(addStatusLog).mockResolvedValue({ woId: "WO-AFTER-TEST", statusCode: "IN_PROGRESS" } as never);
     const caller = appRouter.createCaller(createTechnicianContext());
 

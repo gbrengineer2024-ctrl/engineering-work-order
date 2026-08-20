@@ -15,8 +15,8 @@ function contextFor(role: "ADMIN" | "REPORTER" | "SUPERVISOR" | "TECHNICIAN", op
       updatedAt: new Date(),
       lastSignedIn: new Date(),
     },
-    req: new Request("https://example.com"),
-    responseCookies: [],
+    req: { protocol: "https", headers: {} },
+    res: {},
   } as TrpcContext;
 }
 

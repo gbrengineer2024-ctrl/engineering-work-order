@@ -1,9 +1,11 @@
+import { createCipheriv, createDecipheriv, createHash, randomBytes } from "node:crypto";
 import { eq } from "drizzle-orm";
 import { lineIntegrationSettings } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 import { getDb } from "./db";
 
 const INTEGRATION_KEY = "LINE_MESSAGING";
+const PUBLIC_APP_BASE_URL = "https://hotelmaintai-e5vycneh.manus.space";
 
 type StoredSettings = {
   id: number;
@@ -22,40 +24,24 @@ type StoredSettings = {
   updatedAt: Date;
 };
 
-function toBase64Url(bytes: Uint8Array): string {
-  let binary = "";
-  for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
-  return btoa(binary).replace(/=/g, "").replace(/\+/g, "-").replace(/\//g, "_");
-}
-
-function fromBase64Url(text: string): Uint8Array<ArrayBuffer> {
-  const padded = text.replace(/-/g, "+").replace(/_/g, "/").padEnd(Math.ceil(text.length / 4) * 4, "=");
-  const binary = atob(padded);
-  const bytes = new Uint8Array(new ArrayBuffer(binary.length));
-  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-  return bytes;
-}
-
-async function getCryptoKey(): Promise<CryptoKey> {
+function encryptionKey() {
   if (!ENV.cookieSecret) throw new Error("ไม่พบคีย์ระบบสำหรับเข้ารหัสการตั้งค่า LINE");
-  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(ENV.cookieSecret));
-  return crypto.subtle.importKey("raw", digest, "AES-GCM", false, ["encrypt", "decrypt"]);
+  return createHash("sha256").update(ENV.cookieSecret).digest();
 }
 
-/** AES-256-GCM via Web Crypto (portable to Workers). Stored as "iv.ciphertext", both base64url. */
-export async function encryptLineValue(value: string): Promise<string> {
-  const key = await getCryptoKey();
-  const iv = crypto.getRandomValues(new Uint8Array(12));
-  const cipherBuf = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, key, new TextEncoder().encode(value));
-  return [toBase64Url(iv), toBase64Url(new Uint8Array(cipherBuf))].join(".");
+export function encryptLineValue(value: string) {
+  const iv = randomBytes(12);
+  const cipher = createCipheriv("aes-256-gcm", encryptionKey(), iv);
+  const encrypted = Buffer.concat([cipher.update(value, "utf8"), cipher.final()]);
+  return [iv.toString("base64url"), cipher.getAuthTag().toString("base64url"), encrypted.toString("base64url")].join(".");
 }
 
-export async function decryptLineValue(value: string): Promise<string> {
-  const [ivText, cipherText] = value.split(".");
-  if (!ivText || !cipherText) throw new Error("รูปแบบข้อมูลการตั้งค่า LINE ไม่ถูกต้อง");
-  const key = await getCryptoKey();
-  const plainBuf = await crypto.subtle.decrypt({ name: "AES-GCM", iv: fromBase64Url(ivText) }, key, fromBase64Url(cipherText));
-  return new TextDecoder().decode(plainBuf);
+export function decryptLineValue(value: string) {
+  const [ivText, tagText, encryptedText] = value.split(".");
+  if (!ivText || !tagText || !encryptedText) throw new Error("รูปแบบข้อมูลการตั้งค่า LINE ไม่ถูกต้อง");
+  const decipher = createDecipheriv("aes-256-gcm", encryptionKey(), Buffer.from(ivText, "base64url"));
+  decipher.setAuthTag(Buffer.from(tagText, "base64url"));
+  return Buffer.concat([decipher.update(Buffer.from(encryptedText, "base64url")), decipher.final()]).toString("utf8");
 }
 
 export function maskLineValue(value: string | null) {
@@ -76,8 +62,8 @@ export async function getLineIntegrationPublicSettings() {
   let tokenMasked: string | null = null;
   let recipientMasked: string | null = null;
   try {
-    tokenMasked = maskLineValue(settings.channelAccessTokenEncrypted ? await decryptLineValue(settings.channelAccessTokenEncrypted) : null);
-    recipientMasked = maskLineValue(settings.recipientIdEncrypted ? await decryptLineValue(settings.recipientIdEncrypted) : null);
+    tokenMasked = maskLineValue(settings.channelAccessTokenEncrypted ? decryptLineValue(settings.channelAccessTokenEncrypted) : null);
+    recipientMasked = maskLineValue(settings.recipientIdEncrypted ? decryptLineValue(settings.recipientIdEncrypted) : null);
   } catch {
     // Existing encrypted values may have been created with a rotated system key.
   }
@@ -98,8 +84,8 @@ export async function getLineIntegrationPublicSettings() {
 export async function saveLineIntegrationSettings(input: { channelAccessToken?: string; recipientId?: string; isEnabled: boolean; alertUrgent: boolean; alertOverdue: boolean; updatedByUserId: string }) {
   const { db, settings } = await findSettings();
   const update: Record<string, unknown> = { isEnabled: input.isEnabled, alertUrgent: input.alertUrgent, alertOverdue: input.alertOverdue, updatedByUserId: input.updatedByUserId, updatedAt: new Date() };
-  if (input.channelAccessToken?.trim()) update.channelAccessTokenEncrypted = await encryptLineValue(input.channelAccessToken.trim());
-  if (input.recipientId?.trim()) update.recipientIdEncrypted = await encryptLineValue(input.recipientId.trim());
+  if (input.channelAccessToken?.trim()) update.channelAccessTokenEncrypted = encryptLineValue(input.channelAccessToken.trim());
+  if (input.recipientId?.trim()) update.recipientIdEncrypted = encryptLineValue(input.recipientId.trim());
   if (!settings) {
     await db.insert(lineIntegrationSettings).values({ integrationKey: INTEGRATION_KEY, isEnabled: input.isEnabled, alertUrgent: input.alertUrgent, alertOverdue: input.alertOverdue, channelAccessTokenEncrypted: (update.channelAccessTokenEncrypted as string | undefined) ?? null, recipientIdEncrypted: (update.recipientIdEncrypted as string | undefined) ?? null, updatedByUserId: input.updatedByUserId });
   } else {
@@ -140,8 +126,8 @@ async function dispatch(kind: LineDispatchKind, text: string, recipientOverride?
   if (kind === "URGENT" && !settings.alertUrgent) return { sent: false, skipped: true, reason: "urgent-disabled" };
   if (kind === "OVERDUE" && !settings.alertOverdue) return { sent: false, skipped: true, reason: "overdue-disabled" };
   try {
-    const token = settings.channelAccessTokenEncrypted ? await decryptLineValue(settings.channelAccessTokenEncrypted) : "";
-    const configuredRecipient = settings.recipientIdEncrypted ? await decryptLineValue(settings.recipientIdEncrypted) : "";
+    const token = settings.channelAccessTokenEncrypted ? decryptLineValue(settings.channelAccessTokenEncrypted) : "";
+    const configuredRecipient = settings.recipientIdEncrypted ? decryptLineValue(settings.recipientIdEncrypted) : "";
     const { recipient, usedFallback } = resolveDispatchRecipient(kind, recipientOverride, configuredRecipient);
     if (!recipient) {
       const reason = missingLineRecipientReason(kind);
@@ -185,10 +171,7 @@ export function formatLineCompletionMessage(input: { woId: string; locationId: s
 }
 
 export function getWorkOrderDeepLink(woId: string) {
-  // Set PUBLIC_APP_BASE_URL as a wrangler var once you know your
-  // workers.dev or custom domain.
-  const base = ENV.publicAppBaseUrl || "https://example.workers.dev";
-  return `${base}/?woId=${encodeURIComponent(woId.trim())}`;
+  return `${PUBLIC_APP_BASE_URL}/?woId=${encodeURIComponent(woId.trim())}`;
 }
 
 export function resolveTechnicianLineRecipient(technicianLineUserId?: string | null, linkedUserLineUserId?: string | null) {
