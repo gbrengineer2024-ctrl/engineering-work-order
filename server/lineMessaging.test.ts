@@ -1,30 +1,37 @@
-import { describe, expect, it } from "vitest";
+import { beforeAll, describe, expect, it } from "vitest";
 import { decryptLineValue, encryptLineValue, maskLineValue } from "./lineMessaging";
 import { appRouter } from "./routers";
 import type { TrpcContext } from "./_core/context";
+import { ENV } from "./_core/env";
+
+beforeAll(() => {
+  // Normally set per-request by bindEnv() from the JWT_SECRET binding; tests
+  // run outside a Worker request, so set it directly.
+  ENV.cookieSecret = "test-secret-for-line-messaging-encryption";
+});
 
 describe("LINE integration secret protection", () => {
-  it("encrypts Channel Access Token without preserving the original text", () => {
+  it("encrypts Channel Access Token without preserving the original text", async () => {
     const token = "test-channel-access-token-123456";
-    const encrypted = encryptLineValue(token);
+    const encrypted = await encryptLineValue(token);
 
     expect(encrypted).not.toContain(token);
-    expect(encrypted.split(".")).toHaveLength(3);
-    expect(decryptLineValue(encrypted)).toBe(token);
+    expect(encrypted.split(".")).toHaveLength(2);
+    expect(await decryptLineValue(encrypted)).toBe(token);
   });
 
-  it("uses a fresh initialization vector for each encrypted value", () => {
+  it("uses a fresh initialization vector for each encrypted value", async () => {
     const recipientId = "U0123456789abcdef0123456789abcdef";
-    const first = encryptLineValue(recipientId);
-    const second = encryptLineValue(recipientId);
+    const first = await encryptLineValue(recipientId);
+    const second = await encryptLineValue(recipientId);
 
     expect(first).not.toBe(second);
-    expect(decryptLineValue(first)).toBe(recipientId);
-    expect(decryptLineValue(second)).toBe(recipientId);
+    expect(await decryptLineValue(first)).toBe(recipientId);
+    expect(await decryptLineValue(second)).toBe(recipientId);
   });
 
-  it("rejects malformed encrypted values", () => {
-    expect(() => decryptLineValue("not-an-encrypted-value")).toThrow("รูปแบบข้อมูลการตั้งค่า LINE ไม่ถูกต้อง");
+  it("rejects malformed encrypted values", async () => {
+    await expect(decryptLineValue("not-an-encrypted-value")).rejects.toThrow("รูปแบบข้อมูลการตั้งค่า LINE ไม่ถูกต้อง");
   });
 
   it("only exposes the final four characters in public status", () => {
@@ -39,14 +46,14 @@ describe("LINE integration secret protection", () => {
         openId: "staff-user",
         email: "staff@example.com",
         name: "Staff User",
-        loginMethod: "manus",
-        role: "STAFF",
+        loginMethod: "line",
+        role: "REPORTER",
         createdAt: new Date(),
         updatedAt: new Date(),
         lastSignedIn: new Date(),
       },
-      req: { protocol: "https", headers: {} },
-      res: {},
+      req: new Request("https://example.com"),
+      responseCookies: [],
     } as TrpcContext;
 
     const caller = appRouter.createCaller(ctx);

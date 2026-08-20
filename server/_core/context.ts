@@ -1,16 +1,15 @@
-import type { CreateExpressContextOptions } from "@trpc/server/adapters/express";
+import type { FetchCreateContextFnOptions } from "@trpc/server/adapters/fetch";
 import type { User } from "../../drizzle/schema";
 import { sdk } from "./sdk";
 
 export type TrpcContext = {
-  req: CreateExpressContextOptions["req"];
-  res: CreateExpressContextOptions["res"];
+  req: Request;
+  /** Set-Cookie headers accumulated during this request; applied to the final Response in server/index.ts. */
+  responseCookies: string[];
   user: User | null;
 };
 
-export async function createContext(
-  opts: CreateExpressContextOptions
-): Promise<TrpcContext> {
+export async function createContext(opts: FetchCreateContextFnOptions): Promise<TrpcContext> {
   let user: User | null = null;
 
   try {
@@ -22,7 +21,7 @@ export async function createContext(
 
   return {
     req: opts.req,
-    res: opts.res,
+    responseCookies: [],
     user,
   };
 }
