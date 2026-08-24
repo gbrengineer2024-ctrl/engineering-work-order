@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Camera, ImagePlus, Maximize2, X } from "lucide-react";
+import { Camera, Maximize2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -65,6 +65,10 @@ function CreateWorkOrderWithBeforePhoto({ open, onOpenChange }: { open: boolean;
   const submit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!user) return;
+    if (beforePhotos.length === 0) {
+      toast.error("กรุณาถ่ายรูปก่อนงานอย่างน้อย 1 รูป");
+      return;
+    }
     const data = new FormData(event.currentTarget);
     let created = false;
     try {
@@ -100,9 +104,9 @@ function CreateWorkOrderWithBeforePhoto({ open, onOpenChange }: { open: boolean;
           <label className="block text-sm font-semibold">ความสำคัญ<select required name="priorityCode" defaultValue="MEDIUM" className="mt-2 h-11 w-full rounded-xl border border-input bg-secondary px-3 text-sm outline-none focus:ring-2 focus:ring-ring"><option>LOW</option><option>MEDIUM</option><option>HIGH</option><option>URGENT</option></select></label>
           <label className="block text-sm font-semibold">รายละเอียดปัญหา<Textarea required name="description" placeholder="อธิบายอาการหรือผลกระทบ เพื่อให้ช่างเตรียมงานได้ต้องตรง" className="mt-2 min-h-28 rounded-xl bg-secondary" /></label>
           <div className="rounded-2xl border border-dashed border-indigo-400/50 bg-indigo-500/10 p-4">
-            <div className="flex items-start justify-between gap-3"><div><p className="flex items-center gap-2 text-sm font-bold text-indigo-100"><Camera className="h-4 w-4" />รูปภาพก่อนงาน <span className="font-normal text-muted-foreground">(ไม่บังคับ)</span></p><p className="mt-1 text-xs leading-5 text-muted-foreground">เลือกได้สูงสุด {MAX_BEFORE_PHOTOS} รูป รองรับ JPG, PNG, WebP ขนาดรูปละไม่เกิน 8 MB</p></div>{beforePhotos.length > 0 && <span className="rounded-full bg-indigo-300/15 px-2 py-1 text-xs font-bold text-indigo-100">{beforePhotos.length}/{MAX_BEFORE_PHOTOS} รูป</span>}</div>
+            <div className="flex items-start justify-between gap-3"><div><p className="flex items-center gap-2 text-sm font-bold text-indigo-100"><Camera className="h-4 w-4" />รูปภาพก่อนงาน <span className="font-normal text-rose-300">(บังคับ)</span></p><p className="mt-1 text-xs leading-5 text-muted-foreground">ถ่ายได้สูงสุด {MAX_BEFORE_PHOTOS} รูป รองรับ JPG, PNG, WebP ขนาดรูปละไม่เกิน 8 MB</p></div>{beforePhotos.length > 0 && <span className="rounded-full bg-indigo-300/15 px-2 py-1 text-xs font-bold text-indigo-100">{beforePhotos.length}/{MAX_BEFORE_PHOTOS} รูป</span>}</div>
             {beforePhotos.length > 0 && <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3">{beforePhotos.map((photo, index) => <div key={`${photo.name}-${index}`} className="group relative overflow-hidden rounded-xl border border-indigo-300/20 bg-black/20"><button type="button" className="block h-24 w-full" onClick={() => setExpandedPreview({ url: previewUrls[index], name: photo.name })} aria-label={`ขยายรูป ${photo.name}`}><img src={previewUrls[index]} alt={`ตัวอย่างรูปก่อนงาน ${index + 1}`} className="h-full w-full object-cover" /></button><div className="absolute inset-x-0 bottom-0 flex items-center justify-between bg-black/70 px-2 py-1.5"><span className="max-w-[70%] truncate text-[10px] text-white">{photo.name}</span><div className="flex gap-1"><button type="button" onClick={() => setExpandedPreview({ url: previewUrls[index], name: photo.name })} className="rounded p-1 text-white hover:bg-white/15" aria-label="ดูรูปเต็มจอ"><Maximize2 className="h-3.5 w-3.5" /></button><button type="button" onClick={() => removePhoto(index)} className="rounded p-1 text-white hover:bg-white/15" aria-label="ลบรูป"><X className="h-3.5 w-3.5" /></button></div></div></div>)}</div>}
-            {beforePhotos.length < MAX_BEFORE_PHOTOS && <div className="mt-3 grid gap-3 sm:grid-cols-2"><label className="flex min-h-24 cursor-pointer flex-col items-center justify-center rounded-xl border border-dashed border-indigo-400/45 bg-background/30 px-4 text-center text-sm text-indigo-100 hover:bg-indigo-400/10"><Camera className="mb-2 h-5 w-5" />ถ่ายรูปด้วยกล้อง<input type="file" accept="image/*" capture="environment" className="sr-only" onChange={choosePhotos} /></label><label className="flex min-h-24 cursor-pointer flex-col items-center justify-center rounded-xl border border-dashed border-indigo-400/45 bg-background/30 px-4 text-center text-sm text-indigo-100 hover:bg-indigo-400/10"><ImagePlus className="mb-2 h-5 w-5" />เลือกรูปจากเครื่อง<input type="file" accept="image/*" multiple className="sr-only" onChange={choosePhotos} /></label></div>}
+            {beforePhotos.length < MAX_BEFORE_PHOTOS && <div className="mt-3"><label className="flex min-h-24 cursor-pointer flex-col items-center justify-center rounded-xl border border-dashed border-indigo-400/45 bg-background/30 px-4 text-center text-sm text-indigo-100 hover:bg-indigo-400/10"><Camera className="mb-2 h-5 w-5" />ถ่ายรูปด้วยกล้อง<input type="file" accept="image/*" capture="environment" className="sr-only" onChange={choosePhotos} /></label></div>}
           </div>
           <Button type="submit" disabled={create.isPending || upload.isPending} className="h-11 w-full rounded-xl bg-gradient-to-r from-indigo-500 to-violet-600 font-bold text-white hover:from-indigo-400 hover:to-violet-500">{create.isPending || upload.isPending ? "กำลังบันทึก..." : "สร้างใบงาน"}</Button>
         </form>
