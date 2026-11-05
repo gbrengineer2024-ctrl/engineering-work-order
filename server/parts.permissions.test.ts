@@ -12,12 +12,13 @@ vi.mock("./db", async importOriginal => {
     issuePart: vi.fn().mockResolvedValue({ issueId: "ISSUE-TEST", issueStatus: "ISSUED" }),
     getWorkOrder: vi.fn().mockImplementation(async (woId: string) => ({ workOrder: { woId, requesterUserId: "line-REPORTER", assignedTechId: "TECH-TEST" } })),
     getTechnicianIdForUser: vi.fn().mockResolvedValue("TECH-TEST"),
+    listWorkOrders: vi.fn().mockResolvedValue([]),
     updateTechnicianAvailability: vi.fn().mockResolvedValue([]),
   };
 });
 
 import { appRouter } from "./routers";
-import { approvePartIssue, createPart, getTechnicianIdForUser, getWorkOrder, issuePart, requestPartIssue, updatePart, updateTechnicianAvailability } from "./db";
+import { approvePartIssue, createPart, getTechnicianIdForUser, getWorkOrder, issuePart, listWorkOrders, requestPartIssue, updatePart, updateTechnicianAvailability } from "./db";
 import { canChangeStatus } from "./routers";
 
 type Role = "ADMIN" | "REPORTER" | "SUPERVISOR" | "TECHNICIAN";
@@ -80,7 +81,6 @@ describe("สิทธิ์ API คลังอะไหล่", () => {
   it("กรองรายการใบงานของช่างด้วย techId ที่ผูกกับบัญชี", async () => {
     const caller = appRouter.createCaller(createContext("TECHNICIAN"));
     await caller.workOrders.list();
-    const { listWorkOrders } = await import("./db");
     expect(listWorkOrders).toHaveBeenCalledWith({ assignedTechId: "TECH-TEST" });
   });
 
