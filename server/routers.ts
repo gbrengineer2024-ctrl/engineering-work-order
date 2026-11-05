@@ -34,8 +34,11 @@ export function canChangeStatus(user: { role?: string } | null, nextStatus: stri
   return false;
 }
 export function requiresAfterPhoto(nextStatus: string) { return nextStatus === "COMPLETED"; }
-export function canSetTechnicianAvailability(user: { openId?: string; role?: string } | null, techId: string) {
-  return Boolean(user && (hasRole(user, ["ADMIN", "SUPERVISOR"]) || (user.role === "TECHNICIAN" && user.openId === techId)));
+export async function canSetTechnicianAvailability(user: { openId?: string; role?: string } | null, techId: string) {
+  if (!user) return false;
+  if (hasRole(user, ["ADMIN", "SUPERVISOR"])) return true;
+  if (user.role !== "TECHNICIAN" || !user.openId) return false;
+  return (await getTechnicianIdForUser(user.openId)) === techId;
 }
 
 async function assertWorkOrderAccess(user: { openId: string; role?: string }, woId: string) {
@@ -146,7 +149,7 @@ export const appRouter = router({
     list: protectedProcedure.query(() => listTechnicians()),
     create: protectedProcedure.input(z.object({ techId: z.string().min(1), techName: z.string().min(1), teamCode: z.string().min(1), skills: z.string().optional(), shiftCode: z.string().optional(), phone: z.string().optional(), maxOpenJobs: z.coerce.number().int().positive().default(5) })).mutation(({ input, ctx }) => canManage(ctx.user) ? createTechnician({ ...input, isActive: true, availabilityStatus: "OFF_DUTY", currentOpenJobs: 0 }) : Promise.reject(new Error("FORBIDDEN"))),
     update: protectedProcedure.input(z.object({ techId: z.string().min(1), values: z.object({ techName: z.string().optional(), teamCode: z.string().optional(), skills: z.string().nullable().optional(), shiftCode: z.string().nullable().optional(), phone: z.string().nullable().optional(), maxOpenJobs: z.coerce.number().int().positive().optional(), isActive: z.boolean().optional() }) })).mutation(({ input, ctx }) => canManage(ctx.user) ? updateTechnician(input.techId, input.values) : Promise.reject(new Error("FORBIDDEN"))),
-    setAvailability: protectedProcedure.input(z.object({ techId: z.string().min(1), availabilityStatus: technicianAvailabilitySchema })).mutation(({ input, ctx }) => canSetTechnicianAvailability(ctx.user, input.techId) ? updateTechnicianAvailability(input.techId, input.availabilityStatus) : Promise.reject(new Error("FORBIDDEN"))),
+    setAvailability: protectedProcedure.input(z.object({ techId: z.string().min(1), availabilityStatus: technicianAvailabilitySchema })).mutation(async ({ input, ctx }) => (await canSetTechnicianAvailability(ctx.user, input.techId)) ? updateTechnicianAvailability(input.techId, input.availabilityStatus) : Promise.reject(new Error("FORBIDDEN"))),
   }),
   lookups: router({ list: publicProcedure.input(z.object({ type: z.string().optional() }).optional()).query(({ input }) => listLookups(input?.type)) }),
   parts: router({
