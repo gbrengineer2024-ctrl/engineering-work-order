@@ -10,11 +10,13 @@ vi.mock("./db", async importOriginal => {
     requestPartIssue: vi.fn().mockResolvedValue({ issueId: "ISSUE-TEST" }),
     approvePartIssue: vi.fn().mockResolvedValue({ issueId: "ISSUE-TEST", issueStatus: "APPROVED" }),
     issuePart: vi.fn().mockResolvedValue({ issueId: "ISSUE-TEST", issueStatus: "ISSUED" }),
+    getWorkOrder: vi.fn().mockImplementation(async (woId: string) => ({ workOrder: { woId, requesterUserId: "line-REPORTER", assignedTechId: "line-TECHNICIAN" } })),
   };
 });
 
 import { appRouter } from "./routers";
-import { approvePartIssue, createPart, issuePart, requestPartIssue, updatePart } from "./db";
+import { approvePartIssue, createPart, getWorkOrder, issuePart, requestPartIssue, updatePart } from "./db";
+import { canChangeStatus } from "./routers";
 
 type Role = "ADMIN" | "REPORTER" | "SUPERVISOR" | "TECHNICIAN";
 const managedPart = { partCode: "PART-TEST", partNameTh: "หลอดไฟ LED", categoryCode: "ELECTRICAL", unit: "ชิ้น", currentStockQty: 12, minStockQty: 2, reservedQty: 0, unitCostThb: 45 };
@@ -49,6 +51,28 @@ describe("สิทธิ์ API คลังอะไหล่", () => {
   it.each<Role>(["ADMIN", "REPORTER", "SUPERVISOR", "TECHNICIAN"])("อนุญาต %s ส่งคำขอเบิกอะไหล่", async role => {
     await expect(appRouter.createCaller(createContext(role)).partIssues.request({ woId: "WO-TEST", partId: "PART-TEST", qtyRequested: 1 })).resolves.toEqual({ issueId: "ISSUE-TEST" });
     expect(requestPartIssue).toHaveBeenCalledWith({ woId: "WO-TEST", partId: "PART-TEST", qtyRequested: 1, requestedByUserId: `line-${role}` });
+  });
+
+  it("ปฏิเสธผู้ใช้ที่ไม่มีสิทธิ์เข้าถึงใบงานจากการขอเบิกอะไหล่", async () => {
+    vi.mocked(getWorkOrder).mockResolvedValueOnce({
+      workOrder: { woId: "WO-OTHER", requesterUserId: "another-user", assignedTechId: null },
+    } as any);
+    const caller = appRouter.createCaller(createContext("REPORTER"));
+    await expect(caller.partIssues.request({ woId: "WO-OTHER", partId: "PART-TEST", qtyRequested: 1 })).rejects.toThrow("FORBIDDEN");
+    expect(requestPartIssue).not.toHaveBeenCalled();
+  });
+
+  it("ปฏิเสธผู้ใช้ทั่วไปเมื่อขอรายการเบิกทั้งหมดโดยไม่ระบุใบงาน", async () => {
+    const caller = appRouter.createCaller(createContext("REPORTER"));
+    await expect(caller.partIssues.list()).rejects.toThrow("WO_ID_REQUIRED");
+  });
+
+  it("จำกัดการเปลี่ยนสถานะตามบทบาท", () => {
+    expect(canChangeStatus({ role: "REPORTER" }, "ASSIGNED")).toBe(false);
+    expect(canChangeStatus({ role: "REPORTER" }, "IN_PROGRESS")).toBe(false);
+    expect(canChangeStatus({ role: "TECHNICIAN" }, "IN_PROGRESS")).toBe(true);
+    expect(canChangeStatus({ role: "SUPERVISOR" }, "ASSIGNED")).toBe(true);
+    expect(canChangeStatus({ role: "TECHNICIAN" }, "CLOSED")).toBe(false);
   });
 
   it("ปฏิเสธการขอเบิกเมื่อยังไม่ได้เข้าสู่ระบบ", async () => {
