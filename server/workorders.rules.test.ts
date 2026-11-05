@@ -1,4 +1,9 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+
+vi.mock("./db", async importOriginal => {
+  const actual = await importOriginal<typeof import("./db")>();
+  return { ...actual, getTechnicianIdForUser: vi.fn().mockResolvedValue("line-tech-1") };
+});
 import { appRouter, auditActor, canChangeStatus, canCreate, canEdit, canManage, canSetTechnicianAvailability, requiresAfterPhoto } from "./routers";
 import { isWorkloadActive, nextWorkOrderId, technicianSyncPlan, workOrderDateSegment, workloadDelta } from "./db";
 import type { TrpcContext } from "./_core/context";
@@ -105,11 +110,11 @@ describe("work order system contracts", () => {
     expect(requiresAfterPhoto("PENDING_PARTS")).toBe(false);
   });
 
-  it("allows a technician to update only their own availability while supervisors and admins manage all technicians", () => {
-    expect(canSetTechnicianAvailability({ openId: "line-tech-1", role: "TECHNICIAN" }, "line-tech-1")).toBe(true);
-    expect(canSetTechnicianAvailability({ openId: "line-tech-1", role: "TECHNICIAN" }, "line-tech-2")).toBe(false);
-    expect(canSetTechnicianAvailability({ openId: "line-supervisor", role: "SUPERVISOR" }, "line-tech-2")).toBe(true);
-    expect(canSetTechnicianAvailability({ openId: "line-reporter", role: "REPORTER" }, "line-tech-2")).toBe(false);
+  it("allows a technician to update only their own availability while supervisors and admins manage all technicians", async () => {
+    await expect(canSetTechnicianAvailability({ openId: "line-tech-1", role: "TECHNICIAN" }, "line-tech-1")).resolves.toBe(true);
+    await expect(canSetTechnicianAvailability({ openId: "line-tech-1", role: "TECHNICIAN" }, "line-tech-2")).resolves.toBe(false);
+    await expect(canSetTechnicianAvailability({ openId: "line-supervisor", role: "SUPERVISOR" }, "line-tech-2")).resolves.toBe(true);
+    await expect(canSetTechnicianAvailability({ openId: "line-reporter", role: "REPORTER" }, "line-tech-2")).resolves.toBe(false);
   });
 
   it("creates a sequential work-order number on the Bangkok business date", () => {
