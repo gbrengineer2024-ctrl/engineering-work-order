@@ -6,6 +6,8 @@ import { bindEnv, type WorkerEnv } from "./_core/env";
 import { createContext, type TrpcContext } from "./_core/context";
 import { registerLineLoginRoutes } from "./lineLogin";
 import { appRouter } from "./routers";
+import { sdk } from "./_core/sdk";
+import { getWorkOrder } from "./db";
 
 const app = new Hono<{ Bindings: WorkerEnv }>();
 
@@ -23,13 +25,34 @@ app.use("*", async (c, next) => {
 // Manus "/manus-storage/*" Forge proxy with direct Cloudflare R2 access.
 app.get("/files/*", async c => {
   const key = c.req.path.replace(/^\/files\//, "");
+  const match = key.match(/^work-orders\/([^/]+)\/[^/]+$/);
+  if (!match) return c.notFound();
+
+  let user;
+  try {
+    user = await sdk.authenticateRequest(c.req.raw);
+  } catch {
+    return c.text("Unauthorized", 401);
+  }
+
+  const detail = await getWorkOrder(match[1]);
+  if (!detail) return c.notFound();
+  const order = detail.workOrder;
+  const canRead =
+    user.role === "ADMIN" ||
+    user.role === "SUPERVISOR" ||
+    (user.role === "REPORTER" && order.requesterUserId === user.openId) ||
+    (user.role === "TECHNICIAN" && order.assignedTechId === user.openId);
+  if (!canRead) return c.text("Forbidden", 403);
+
   const object = await storageGetObject(key);
   if (!object) return c.notFound();
 
   const headers = new Headers();
   object.writeHttpMetadata(headers);
   headers.set("etag", object.httpEtag);
-  headers.set("cache-control", "public, max-age=31536000, immutable");
+  headers.set("cache-control", "private, no-store");
+  headers.set("x-content-type-options", "nosniff");
   return new Response(object.body, { headers });
 });
 
