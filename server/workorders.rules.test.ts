@@ -87,7 +87,9 @@ describe("work order system contracts", () => {
   });
 
   it("covers status transition permissions including close", () => {
-    expect(canChangeStatus({ role: "REPORTER" }, "IN_PROGRESS")).toBe(true);
+    expect(canChangeStatus({ role: "REPORTER" }, "ASSIGNED")).toBe(false);
+    expect(canChangeStatus({ role: "REPORTER" }, "IN_PROGRESS")).toBe(false);
+    expect(canChangeStatus({ role: "TECHNICIAN" }, "IN_PROGRESS")).toBe(true);
     expect(canChangeStatus({ role: "TECHNICIAN" }, "COMPLETED")).toBe(true);
     expect(canChangeStatus({ role: "TECHNICIAN" }, "CLOSED")).toBe(false);
     expect(canChangeStatus({ role: "SUPERVISOR" }, "CLOSED")).toBe(true);
