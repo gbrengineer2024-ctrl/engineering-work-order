@@ -518,6 +518,16 @@ export async function issuePart(input: { issueId: string; qtyIssued: number }) {
 }
 
 export async function listLocations() { const db = await getDb(); return db ? db.select().from(locations).orderBy(locations.areaName) : []; }
+export async function getTechnicianIdForUser(userId: string) {
+  const db = await getDb();
+  if (!db) return null;
+  const lineUserId = userId.startsWith("line_") ? userId.slice(5) : userId;
+  const [technician] = await db.select({ techId: technicians.techId }).from(technicians).where(
+    or(eq(technicians.userId, userId), eq(technicians.lineUserId, lineUserId))
+  ).limit(1);
+  return technician?.techId ?? null;
+}
+
 export async function listTechnicians() {
   const db = await getDb();
   if (!db) return [];
