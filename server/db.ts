@@ -446,34 +446,75 @@ export async function requestPartIssue(input: { woId: string; partId: string; qt
 export async function approvePartIssue(input: { issueId: string; qtyApproved: number; approvedByUserId: string }) {
   const db = await getDb();
   if (!db) throw new Error("Database unavailable");
-  return db.transaction(async tx => {
-    const [issue] = await tx.select().from(partIssues).where(eq(partIssues.issueId, input.issueId)).limit(1);
-    if (!issue) throw new Error("PART_ISSUE_NOT_FOUND");
-    if (issue.issueStatus !== "REQUESTED") throw new Error("PART_ISSUE_NOT_REQUESTED");
-    if (input.qtyApproved > issue.qtyRequested) throw new Error("APPROVED_QTY_EXCEEDS_REQUEST");
-    const [part] = await tx.select().from(parts).where(eq(parts.partId, issue.partId)).limit(1);
-    if (!part) throw new Error("PART_NOT_FOUND");
-    const inventory = inventoryAfterApproval(part, input.qtyApproved);
-    await tx.update(parts).set({ ...inventory, updatedAt: new Date() }).where(eq(parts.partId, part.partId));
-    await tx.update(partIssues).set({ qtyApproved: input.qtyApproved, issueStatus: "APPROVED", approvedByUserId: input.approvedByUserId, approvedAt: new Date(), updatedAt: new Date() }).where(eq(partIssues.issueId, input.issueId));
-    return { issueId: input.issueId, issueStatus: "APPROVED" as const };
-  });
+
+  // D1 does not support interactive BEGIN/COMMIT transactions. Read the rows,
+  // then apply guarded writes in one D1 batch (an atomic transaction).
+  const [issue] = await db.select().from(partIssues).where(eq(partIssues.issueId, input.issueId)).limit(1);
+  if (!issue) throw new Error("PART_ISSUE_NOT_FOUND");
+  if (issue.issueStatus !== "REQUESTED") throw new Error("PART_ISSUE_NOT_REQUESTED");
+  if (input.qtyApproved > issue.qtyRequested) throw new Error("APPROVED_QTY_EXCEEDS_REQUEST");
+  const [part] = await db.select().from(parts).where(eq(parts.partId, issue.partId)).limit(1);
+  if (!part) throw new Error("PART_NOT_FOUND");
+
+  const inventory = inventoryAfterApproval(part, input.qtyApproved);
+  const now = new Date();
+  await db.batch([
+    db.update(parts).set({ ...inventory, updatedAt: now }).where(and(
+      eq(parts.partId, part.partId),
+      eq(parts.currentStockQty, part.currentStockQty),
+      eq(parts.reservedQty, part.reservedQty),
+      eq(parts.availableQty, part.availableQty),
+      sql`EXISTS (SELECT 1 FROM ${partIssues} WHERE ${partIssues.issueId} = ${input.issueId} AND ${partIssues.issueStatus} = 'REQUESTED')`,
+    )),
+    db.update(partIssues).set({ qtyApproved: input.qtyApproved, issueStatus: "APPROVED", approvedByUserId: input.approvedByUserId, approvedAt: now, updatedAt: now }).where(and(
+      eq(partIssues.issueId, input.issueId),
+      eq(partIssues.issueStatus, "REQUESTED"),
+      eq(partIssues.qtyRequested, issue.qtyRequested),
+      sql`EXISTS (SELECT 1 FROM ${parts} WHERE ${parts.partId} = ${part.partId} AND ${parts.reservedQty} = ${inventory.reservedQty} AND ${parts.availableQty} = ${inventory.availableQty})`,
+    )),
+  ]);
+
+  const [updatedIssue] = await db.select().from(partIssues).where(eq(partIssues.issueId, input.issueId)).limit(1);
+  if (updatedIssue?.issueStatus !== "APPROVED" || updatedIssue.approvedByUserId !== input.approvedByUserId || updatedIssue.qtyApproved !== input.qtyApproved) {
+    throw new Error("PART_ISSUE_CONCURRENT_UPDATE");
+  }
+  return { issueId: input.issueId, issueStatus: "APPROVED" as const };
 }
 
 export async function issuePart(input: { issueId: string; qtyIssued: number }) {
   const db = await getDb();
   if (!db) throw new Error("Database unavailable");
-  return db.transaction(async tx => {
-    const [issue] = await tx.select().from(partIssues).where(eq(partIssues.issueId, input.issueId)).limit(1);
-    if (!issue) throw new Error("PART_ISSUE_NOT_FOUND");
-    if (issue.issueStatus !== "APPROVED") throw new Error("PART_ISSUE_NOT_APPROVED");
-    const [part] = await tx.select().from(parts).where(eq(parts.partId, issue.partId)).limit(1);
-    if (!part) throw new Error("PART_NOT_FOUND");
-    const inventory = inventoryAfterIssuance(part, issue.qtyApproved, input.qtyIssued);
-    await tx.update(parts).set({ ...inventory, updatedAt: new Date() }).where(eq(parts.partId, part.partId));
-    await tx.update(partIssues).set({ qtyIssued: input.qtyIssued, issueCostThb: String(Number(issue.unitCostThb) * input.qtyIssued), issueStatus: "ISSUED", issueAt: new Date(), updatedAt: new Date() }).where(eq(partIssues.issueId, input.issueId));
-    return { issueId: input.issueId, issueStatus: "ISSUED" as const };
-  });
+
+  const [issue] = await db.select().from(partIssues).where(eq(partIssues.issueId, input.issueId)).limit(1);
+  if (!issue) throw new Error("PART_ISSUE_NOT_FOUND");
+  if (issue.issueStatus !== "APPROVED") throw new Error("PART_ISSUE_NOT_APPROVED");
+  const [part] = await db.select().from(parts).where(eq(parts.partId, issue.partId)).limit(1);
+  if (!part) throw new Error("PART_NOT_FOUND");
+
+  const inventory = inventoryAfterIssuance(part, issue.qtyApproved, input.qtyIssued);
+  const now = new Date();
+  const issueCostThb = String(Number(issue.unitCostThb) * input.qtyIssued);
+  await db.batch([
+    db.update(parts).set({ ...inventory, updatedAt: now }).where(and(
+      eq(parts.partId, part.partId),
+      eq(parts.currentStockQty, part.currentStockQty),
+      eq(parts.reservedQty, part.reservedQty),
+      eq(parts.availableQty, part.availableQty),
+      sql`EXISTS (SELECT 1 FROM ${partIssues} WHERE ${partIssues.issueId} = ${input.issueId} AND ${partIssues.issueStatus} = 'APPROVED')`,
+    )),
+    db.update(partIssues).set({ qtyIssued: input.qtyIssued, issueCostThb, issueStatus: "ISSUED", issueAt: now, updatedAt: now }).where(and(
+      eq(partIssues.issueId, input.issueId),
+      eq(partIssues.issueStatus, "APPROVED"),
+      eq(partIssues.qtyApproved, issue.qtyApproved),
+      sql`EXISTS (SELECT 1 FROM ${parts} WHERE ${parts.partId} = ${part.partId} AND ${parts.currentStockQty} = ${inventory.currentStockQty} AND ${parts.reservedQty} = ${inventory.reservedQty} AND ${parts.availableQty} = ${inventory.availableQty})`,
+    )),
+  ]);
+
+  const [updatedIssue] = await db.select().from(partIssues).where(eq(partIssues.issueId, input.issueId)).limit(1);
+  if (updatedIssue?.issueStatus !== "ISSUED" || updatedIssue.qtyIssued !== input.qtyIssued) {
+    throw new Error("PART_ISSUE_CONCURRENT_UPDATE");
+  }
+  return { issueId: input.issueId, issueStatus: "ISSUED" as const };
 }
 
 export async function listLocations() { const db = await getDb(); return db ? db.select().from(locations).orderBy(locations.areaName) : []; }
