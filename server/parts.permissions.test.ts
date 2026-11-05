@@ -10,12 +10,14 @@ vi.mock("./db", async importOriginal => {
     requestPartIssue: vi.fn().mockResolvedValue({ issueId: "ISSUE-TEST" }),
     approvePartIssue: vi.fn().mockResolvedValue({ issueId: "ISSUE-TEST", issueStatus: "APPROVED" }),
     issuePart: vi.fn().mockResolvedValue({ issueId: "ISSUE-TEST", issueStatus: "ISSUED" }),
-    getWorkOrder: vi.fn().mockImplementation(async (woId: string) => ({ workOrder: { woId, requesterUserId: "line-REPORTER", assignedTechId: "line-TECHNICIAN" } })),
+    getWorkOrder: vi.fn().mockImplementation(async (woId: string) => ({ workOrder: { woId, requesterUserId: "line-REPORTER", assignedTechId: "TECH-TEST" } })),
+    getTechnicianIdForUser: vi.fn().mockResolvedValue("TECH-TEST"),
+    updateTechnicianAvailability: vi.fn().mockResolvedValue([]),
   };
 });
 
 import { appRouter } from "./routers";
-import { approvePartIssue, createPart, getWorkOrder, issuePart, requestPartIssue, updatePart } from "./db";
+import { approvePartIssue, createPart, getTechnicianIdForUser, getWorkOrder, issuePart, requestPartIssue, updatePart, updateTechnicianAvailability } from "./db";
 import { canChangeStatus } from "./routers";
 
 type Role = "ADMIN" | "REPORTER" | "SUPERVISOR" | "TECHNICIAN";
@@ -65,6 +67,27 @@ describe("สิทธิ์ API คลังอะไหล่", () => {
   it("ปฏิเสธผู้ใช้ทั่วไปเมื่อขอรายการเบิกทั้งหมดโดยไม่ระบุใบงาน", async () => {
     const caller = appRouter.createCaller(createContext("REPORTER"));
     await expect(caller.partIssues.list()).rejects.toThrow("WO_ID_REQUIRED");
+  });
+
+  it("อนุญาตช่างที่ผูกกับ techId ให้เปิดใบงานที่ได้รับมอบหมาย", async () => {
+    const caller = appRouter.createCaller(createContext("TECHNICIAN"));
+    await expect(caller.workOrders.detail({ woId: "WO-ASSIGNED" })).resolves.toMatchObject({
+      workOrder: { assignedTechId: "TECH-TEST" },
+    });
+    expect(getTechnicianIdForUser).toHaveBeenCalledWith("line-TECHNICIAN");
+  });
+
+  it("กรองรายการใบงานของช่างด้วย techId ที่ผูกกับบัญชี", async () => {
+    const caller = appRouter.createCaller(createContext("TECHNICIAN"));
+    await caller.workOrders.list();
+    const { listWorkOrders } = await import("./db");
+    expect(listWorkOrders).toHaveBeenCalledWith({ assignedTechId: "TECH-TEST" });
+  });
+
+  it("อนุญาตช่างเปลี่ยนสถานะเวรของตนเองด้วย techId", async () => {
+    const caller = appRouter.createCaller(createContext("TECHNICIAN"));
+    await expect(caller.technicians.setAvailability({ techId: "TECH-TEST", availabilityStatus: "ON_DUTY" })).resolves.toEqual([]);
+    expect(updateTechnicianAvailability).toHaveBeenCalledWith("TECH-TEST", "ON_DUTY");
   });
 
   it("จำกัดการเปลี่ยนสถานะตามบทบาท", () => {
