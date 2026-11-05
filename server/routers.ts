@@ -29,10 +29,9 @@ export function canEdit(user: { role?: string } | null) { return hasRole(user, [
 export function canSetWorkOrderCategory(user: { role?: string } | null) { return hasRole(user, ["TECHNICIAN", "SUPERVISOR", "ADMIN"]); }
 export function canChangeStatus(user: { role?: string } | null, nextStatus: string) {
   if (!user) return false;
-  if (nextStatus === "CLOSED") return hasRole(user, ["ADMIN", "SUPERVISOR"]);
-  if (nextStatus === "COMPLETED") return hasRole(user, ["TECHNICIAN", "SUPERVISOR", "ADMIN"]);
-  if (nextStatus === "PENDING_PARTS") return hasRole(user, ["TECHNICIAN", "SUPERVISOR", "ADMIN"]);
-  return hasRole(user, ["REPORTER", "TECHNICIAN", "SUPERVISOR", "ADMIN"]);
+  if (nextStatus === "ASSIGNED" || nextStatus === "CLOSED") return hasRole(user, ["ADMIN", "SUPERVISOR"]);
+  if (["IN_PROGRESS", "PENDING_PARTS", "COMPLETED"].includes(nextStatus)) return hasRole(user, ["TECHNICIAN", "SUPERVISOR", "ADMIN"]);
+  return false;
 }
 export function requiresAfterPhoto(nextStatus: string) { return nextStatus === "COMPLETED"; }
 export function canSetTechnicianAvailability(user: { openId?: string; role?: string } | null, techId: string) {
@@ -152,8 +151,16 @@ export const appRouter = router({
     update: protectedProcedure.input(z.object({ partId: z.string().min(1), values: z.object({ partNameTh: z.string().trim().min(1).max(200).optional(), partNameEn: z.string().trim().max(200).nullable().optional(), categoryCode: z.string().trim().min(1).max(60).optional(), unit: z.string().trim().min(1).max(20).optional(), brandModel: z.string().trim().max(200).nullable().optional(), supplierName: z.string().trim().max(200).nullable().optional(), storageLocation: z.string().trim().max(80).nullable().optional(), minStockQty: z.coerce.number().int().min(0).optional(), currentStockQty: z.coerce.number().int().min(0).optional(), reservedQty: z.coerce.number().int().min(0).optional(), unitCostThb: z.coerce.number().min(0).optional(), reorderLeadDays: z.coerce.number().int().min(0).optional(), notes: z.string().trim().max(2000).nullable().optional(), isActive: z.boolean().optional() }).refine(values => Object.keys(values).length > 0, "ต้องระบุข้อมูลที่ต้องการแก้ไข") })).mutation(({ input, ctx }) => canManage(ctx.user) ? updatePart(input.partId, { ...input.values, unitCostThb: input.values.unitCostThb === undefined ? undefined : String(input.values.unitCostThb) } as any) : Promise.reject(new Error("FORBIDDEN"))),
   }),
   partIssues: router({
-    list: protectedProcedure.input(z.object({ woId: z.string().optional(), status: z.string().optional() }).optional()).query(async ({ input, ctx }) => { if (input?.woId) await assertWorkOrderAccess(ctx.user, input.woId); return listPartIssues(input ?? {}); }),
-    request: protectedProcedure.input(z.object({ woId: z.string().min(1), partId: z.string().min(1), qtyRequested: z.coerce.number().int().positive(), notes: z.string().trim().max(2000).nullable().optional() })).mutation(({ input, ctx }) => canCreate(ctx.user) ? requestPartIssue({ ...input, requestedByUserId: ctx.user.openId }) : Promise.reject(new Error("FORBIDDEN"))),
+    list: protectedProcedure.input(z.object({ woId: z.string().optional(), status: z.string().optional() }).optional()).query(async ({ input, ctx }) => {
+      if (input?.woId) await assertWorkOrderAccess(ctx.user, input.woId);
+      else if (!canManage(ctx.user)) throw new Error("WO_ID_REQUIRED");
+      return listPartIssues(input ?? {});
+    }),
+    request: protectedProcedure.input(z.object({ woId: z.string().min(1), partId: z.string().min(1), qtyRequested: z.coerce.number().int().positive(), notes: z.string().trim().max(2000).nullable().optional() })).mutation(async ({ input, ctx }) => {
+      if (!canCreate(ctx.user)) throw new Error("FORBIDDEN");
+      await assertWorkOrderAccess(ctx.user, input.woId);
+      return requestPartIssue({ ...input, requestedByUserId: ctx.user.openId });
+    }),
     approve: protectedProcedure.input(z.object({ issueId: z.string().min(1), qtyApproved: z.coerce.number().int().positive() })).mutation(({ input, ctx }) => canManage(ctx.user) ? approvePartIssue({ ...input, approvedByUserId: ctx.user.openId }) : Promise.reject(new Error("FORBIDDEN"))),
     issue: protectedProcedure.input(z.object({ issueId: z.string().min(1), qtyIssued: z.coerce.number().int().positive() })).mutation(({ input, ctx }) => canManage(ctx.user) ? issuePart(input) : Promise.reject(new Error("FORBIDDEN"))),
   }),
