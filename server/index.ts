@@ -7,7 +7,7 @@ import { createContext, type TrpcContext } from "./_core/context";
 import { registerLineLoginRoutes } from "./lineLogin";
 import { appRouter } from "./routers";
 import { sdk } from "./_core/sdk";
-import { getWorkOrder } from "./db";
+import { getWorkOrder, getTechnicianIdForUser } from "./db";
 
 const app = new Hono<{ Bindings: WorkerEnv }>();
 
@@ -42,7 +42,7 @@ app.get("/files/*", async c => {
     user.role === "ADMIN" ||
     user.role === "SUPERVISOR" ||
     (user.role === "REPORTER" && order.requesterUserId === user.openId) ||
-    (user.role === "TECHNICIAN" && order.assignedTechId === user.openId);
+    (user.role === "TECHNICIAN" && order.assignedTechId === await getTechnicianIdForUser(user.openId));
   if (!canRead) return c.text("Forbidden", 403);
 
   const object = await storageGetObject(key);
