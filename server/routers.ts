@@ -3,7 +3,7 @@ import { COOKIE_NAME } from "@shared/const";
 import { clearCookie, getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { adminProcedure, protectedProcedure, publicProcedure, router } from "./_core/trpc";
-import { addAttachment, addStatusLog as changeStatusInDb, approvePartIssue, assignWorkOrder, completeLineProfile, createLocation, createPart, createTechnician, createWorkOrder, getDashboardStats, getGoogleDriveIntegrationSettings, getMaintenanceProfile, getWorkOrder, hasWorkOrderAttachmentType, issuePart, listLocations, listLookups, listMaintenanceUsers, listNotifications, listPartIssues, listParts, listTechnicians, listWorkOrders, markNotificationRead, requestPartIssue, saveGoogleDriveIntegrationSettings, setWorkOrderPendingParts, updateLocation, updateMaintenanceUser, updatePart, updateTechnician, updateTechnicianAvailability, updateWorkOrder } from "./db";
+import { addAttachment, addStatusLog as changeStatusInDb, approvePartIssue, assignWorkOrder, completeLineProfile, createLocation, createPart, createTechnician, createWorkOrder, getDashboardStats, getGoogleDriveIntegrationSettings, getMaintenanceProfile, getWorkOrder, getTechnicianIdForUser, hasWorkOrderAttachmentType, issuePart, listLocations, listLookups, listMaintenanceUsers, listNotifications, listPartIssues, listParts, listTechnicians, listWorkOrders, markNotificationRead, requestPartIssue, saveGoogleDriveIntegrationSettings, setWorkOrderPendingParts, updateLocation, updateMaintenanceUser, updatePart, updateTechnician, updateTechnicianAvailability, updateWorkOrder } from "./db";
 import { getLineIntegrationPublicSettings, saveLineIntegrationSettings, testLineIntegration } from "./lineMessaging";
 import { storagePut } from "./storage";
 import { driveStoragePut } from "./googleDrive";
@@ -44,7 +44,7 @@ async function assertWorkOrderAccess(user: { openId: string; role?: string }, wo
   const order = detail.workOrder;
   if (hasRole(user, ["ADMIN", "SUPERVISOR"])) return detail;
   if (user.role === "REPORTER" && order.requesterUserId === user.openId) return detail;
-  if (user.role === "TECHNICIAN" && order.assignedTechId === user.openId) return detail;
+  if (user.role === "TECHNICIAN" && order.assignedTechId === await getTechnicianIdForUser(user.openId)) return detail;
   throw new Error("FORBIDDEN");
 }
 
@@ -86,7 +86,15 @@ export const appRouter = router({
   }),
   dashboard: router({ stats: protectedProcedure.query(() => getDashboardStats()) }),
   workOrders: router({
-    list: protectedProcedure.input(z.object({ status: z.string().optional(), priority: z.string().optional(), category: z.string().optional(), location: z.string().optional(), from: dateInput, to: dateInput, search: z.string().optional() }).optional()).query(({ input, ctx }) => { const filters={...(input??{})}; if(ctx.user.role==="REPORTER") return listWorkOrders({...filters,requesterUserId:ctx.user.openId}); if(ctx.user.role==="TECHNICIAN") return listWorkOrders({...filters,assignedTechId:ctx.user.openId}); return listWorkOrders(filters); }),
+    list: protectedProcedure.input(z.object({ status: z.string().optional(), priority: z.string().optional(), category: z.string().optional(), location: z.string().optional(), from: dateInput, to: dateInput, search: z.string().optional() }).optional()).query(async ({ input, ctx }) => {
+      const filters = { ...(input ?? {}) };
+      if (ctx.user.role === "REPORTER") return listWorkOrders({ ...filters, requesterUserId: ctx.user.openId });
+      if (ctx.user.role === "TECHNICIAN") {
+        const techId = await getTechnicianIdForUser(ctx.user.openId);
+        return techId ? listWorkOrders({ ...filters, assignedTechId: techId }) : [];
+      }
+      return listWorkOrders(filters);
+    }),
     detail: protectedProcedure.input(z.object({ woId: z.string().min(1) })).query(({ input, ctx }) => assertWorkOrderAccess(ctx.user, input.woId)),
     create: protectedProcedure.input(z.object({ woId: z.string().optional(), requesterUserId: z.string().optional(), lineUserId: z.string().optional(), locationId: z.string().min(1), categoryCode: z.string().min(1).default("UNSPECIFIED"), subCategory: z.string().optional(), priorityCode: z.string().min(1), description: z.string().min(3), assignedTeam: z.string().optional(), slaHours: z.coerce.number().optional(), dueAt: z.coerce.date().optional(), sourceChannel: z.string().default("WEBAPP"), customerVisible: z.boolean().default(false) })).mutation(async ({ input, ctx }) => {
       if (!canCreate(ctx.user)) throw new Error("FORBIDDEN");
