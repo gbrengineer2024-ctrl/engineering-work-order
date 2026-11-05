@@ -470,7 +470,7 @@ export async function approvePartIssue(input: { issueId: string; qtyApproved: nu
       eq(partIssues.issueId, input.issueId),
       eq(partIssues.issueStatus, "REQUESTED"),
       eq(partIssues.qtyRequested, issue.qtyRequested),
-      sql`EXISTS (SELECT 1 FROM ${parts} WHERE ${parts.partId} = ${part.partId} AND ${parts.reservedQty} = ${inventory.reservedQty} AND ${parts.availableQty} = ${inventory.availableQty})`,
+      sql`changes() > 0`,
     )),
   ]);
 
@@ -506,7 +506,7 @@ export async function issuePart(input: { issueId: string; qtyIssued: number }) {
       eq(partIssues.issueId, input.issueId),
       eq(partIssues.issueStatus, "APPROVED"),
       eq(partIssues.qtyApproved, issue.qtyApproved),
-      sql`EXISTS (SELECT 1 FROM ${parts} WHERE ${parts.partId} = ${part.partId} AND ${parts.currentStockQty} = ${inventory.currentStockQty} AND ${parts.reservedQty} = ${inventory.reservedQty} AND ${parts.availableQty} = ${inventory.availableQty})`,
+      sql`changes() > 0`,
     )),
   ]);
 
