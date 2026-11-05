@@ -8,11 +8,12 @@ vi.mock("./db", async importOriginal => {
     hasWorkOrderAttachmentType: vi.fn(),
     addStatusLog: vi.fn(),
     getWorkOrder: vi.fn(),
+    getTechnicianIdForUser: vi.fn().mockResolvedValue("line-tech-01"),
   };
 });
 
 import { appRouter } from "./routers";
-import { addStatusLog, getWorkOrder, hasWorkOrderAttachmentType } from "./db";
+import { addStatusLog, getTechnicianIdForUser, getWorkOrder, hasWorkOrderAttachmentType } from "./db";
 
 function createTechnicianContext(): TrpcContext {
   return {
@@ -36,6 +37,7 @@ describe("รูปหลังงานก่อนปิดสถานะ COM
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(getWorkOrder).mockResolvedValue(sampleWorkOrderDetail);
+    vi.mocked(getTechnicianIdForUser).mockResolvedValue("line-tech-01");
   });
 
   it("ปฏิเสธการเปลี่ยนเป็น COMPLETED เมื่อไม่มีรูป AFTER", async () => {

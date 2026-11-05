@@ -28,7 +28,7 @@ bucket_name = "engineering-work-order-files"
 VITE_APP_ID = "engineering-work-order"
 # Used to build LINE deep links back into the app. Set this once you know
 # your workers.dev subdomain or custom domain, e.g. "https://engineering-work-order.<you>.workers.dev".
-PUBLIC_APP_BASE_URL = "https://example.workers.dev"
+PUBLIC_APP_BASE_URL = "https://engineering-work-order.gbrengineer2024.workers.dev"
 
 # Secrets (never put these in this file -- set them with `wrangler secret put <NAME>`):
 #   JWT_SECRET               - long random string, signs session cookies
