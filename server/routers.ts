@@ -43,7 +43,7 @@ export async function canSetTechnicianAvailability(user: { openId?: string; role
 }
 
 function escapeHtml(value: unknown): string {
-  return String(value ?? "").replace(/[&<>"']/g, character => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[character] ?? character));
+  return String(value ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
 }
 
 async function assertWorkOrderAccess(user: { openId: string; role?: string }, woId: string) {
