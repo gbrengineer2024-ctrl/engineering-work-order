@@ -301,7 +301,8 @@ export async function assignWorkOrder(input: { woId: string; techId: string | nu
   await db.update(workOrders).set({ assignedTechId: input.techId, assignedTeam: input.assignedTeam ?? null, statusCode: nextStatus, updatedAt: new Date() }).where(eq(workOrders.woId, input.woId));
   await db.insert(statusLogs).values({ logId: `LOG-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`, woId: input.woId, fromStatus: workOrder.statusCode, toStatus: nextStatus, actorUserId: input.actorUserId, comment: input.comment ?? (input.techId ? `มอบหมายงานให้ ${input.techId}` : "ยกเลิกการมอบหมาย"), isCustomerVisible: true });
   if (input.techId) {
-    await createNotification({ notificationId: `NTF-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`, recipientUserId: input.techId, woId: input.woId, channel: "WEBAPP", title: "WO_ASSIGNED", message: `ได้รับมอบหมายใบงาน ${input.woId}`, isRead: false, createdAt: new Date() });
+    const technicianNotificationRecipient = assignedTechnician?.userId ?? (assignedTechnician?.lineUserId ? `line_${assignedTechnician.lineUserId}` : input.techId);
+    await createNotification({ notificationId: `NTF-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`, recipientUserId: technicianNotificationRecipient, woId: input.woId, channel: "WEBAPP", title: "WO_ASSIGNED", message: `ได้รับมอบหมายใบงาน ${input.woId}`, isRead: false, createdAt: new Date() });
     void import("./lineMessaging").then(({ resolveTechnicianLineRecipient, sendLineAssignmentAlert }) => sendLineAssignmentAlert({ woId: input.woId, technicianLineUserId: resolveTechnicianLineRecipient(technicianLineUserId), locationId: workOrder.locationId, description: workOrder.description })).catch(error => console.warn("[LINE ASSIGNED]", error));
   }
   return getWorkOrder(input.woId);
