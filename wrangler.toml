@@ -34,5 +34,5 @@ PUBLIC_APP_BASE_URL = "https://engineering-work-order.gbrengineer2024.workers.de
 #   JWT_SECRET               - long random string, signs session cookies
 #   LINE_LOGIN_CHANNEL_ID     - from the LINE Developers console
 #   LINE_LOGIN_CHANNEL_SECRET - from the LINE Developers console
-#   OWNER_OPEN_ID             - optional, openId of the account treated as owner
+#   GOOGLE_APPS_SCRIPT_URL    - deployed Google Apps Script Web App URL\n#   GOOGLE_APPS_SCRIPT_TOKEN  - shared secret matching Apps Script Script Property API_TOKEN\n#   OWNER_OPEN_ID             - optional, openId of the account treated as owner
 #   OAUTH_SERVER_URL          - optional, only needed if you re-enable Manus-style OAuth login

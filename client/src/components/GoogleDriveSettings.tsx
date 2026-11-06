@@ -44,7 +44,7 @@ export function GoogleDriveSettings() {
   const status = !hasFolderReference
     ? "ยังไม่ได้กำหนดโฟลเดอร์"
     : isEnabled && !settings.data?.credentialsConfigured
-      ? "เปิด Drive แล้ว แต่ยังขาด Service Account Secrets"
+      ? "เปิด Drive แล้ว แต่ยังขาด Apps Script Secrets"
       : isEnabled
         ? "เปิดใช้ Google Drive สำหรับจัดเก็บไฟล์แล้ว"
         : "ปิดการจัดเก็บไฟล์ใน Google Drive";
@@ -69,12 +69,12 @@ export function GoogleDriveSettings() {
         <label className="block text-sm font-semibold text-slate-100">ลิงก์โฟลเดอร์ Google Drive<Input value={rootFolderUrl} onChange={event => applyFolderReference(event.target.value)} placeholder="https://drive.google.com/drive/folders/..." className="mt-2 h-11 rounded-xl border-sky-400/30 bg-slate-900 text-slate-100" /></label>
         <label className="block text-sm font-semibold text-slate-100">Folder ID<Input value={rootFolderId} onChange={event => setRootFolderId(event.target.value)} placeholder="ระบบกรอกจากลิงก์ให้ได้" className="mt-2 h-11 rounded-xl border-sky-400/30 bg-slate-900 text-slate-100" /></label>
         <label className="flex items-center justify-between gap-3 rounded-2xl border border-sky-400/25 bg-slate-900/75 p-4 text-sm">
-          <span><b className="block text-slate-100">เปิดใช้ลิงก์อ้างอิง Google Drive</b><small className="mt-1 block leading-5 text-slate-300">เมื่อเปิดใช้งาน รูปและไฟล์รายงานจะถูกบันทึกลงโฟลเดอร์นี้; ต้องตั้งค่า Service Account Secrets ให้ครบก่อน</small></span>
+          <span><b className="block text-slate-100">เปิดใช้ลิงก์อ้างอิง Google Drive</b><small className="mt-1 block leading-5 text-slate-300">เมื่อเปิดใช้งาน รูปและไฟล์รายงานจะถูกบันทึกลงโฟลเดอร์นี้; ต้องตั้งค่า Apps Script Web App URL และ Token ให้ครบก่อน</small></span>
           <input aria-label="เปิดใช้ปลายทาง Google Drive" type="checkbox" checked={isEnabled} onChange={event => setIsEnabled(event.target.checked)} />
         </label>
         <div className="rounded-2xl border border-slate-700/80 bg-slate-900/80 p-4">
-          {!settings.data?.credentialsConfigured && <div className="mb-3 rounded-xl border border-amber-400/30 bg-amber-400/10 p-3 text-xs leading-5 text-amber-100"><b>ยังไม่ได้ตั้งค่า Google Service Account</b><p className="mt-1">ใน Cloudflare Worker ของระบบนี้ ให้เพิ่ม Secrets ชื่อ GOOGLE_SERVICE_ACCOUNT_EMAIL และ GOOGLE_PRIVATE_KEY จาก Service Account ที่มีสิทธิ์ Editor ในโฟลเดอร์ Drive นี้ จากนั้น redeploy Worker</p></div>}
-          <div className="flex items-start gap-2"><ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-sky-300" /><div><p className="text-sm font-semibold text-slate-100">สถานะ: {status}</p><p className="mt-1 text-xs leading-5 text-slate-300">การตั้งค่านี้เก็บเฉพาะโฟลเดอร์ปลายทาง ไม่มี Service Account JSON หรือข้อมูลลับแสดงในหน้า Settings</p></div></div>
+          {!settings.data?.credentialsConfigured && <div className="mb-3 rounded-xl border border-amber-400/30 bg-amber-400/10 p-3 text-xs leading-5 text-amber-100"><b>ยังไม่ได้ตั้งค่า Google Apps Script</b><p className="mt-1">ใน Cloudflare Worker ให้เพิ่ม Secrets ชื่อ GOOGLE_APPS_SCRIPT_URL และ GOOGLE_APPS_SCRIPT_TOKEN โดย URL มาจาก Web App deployment และ Token ต้องตรงกับ Script Property API_TOKEN จากนั้น redeploy Worker</p></div>}
+          <div className="flex items-start gap-2"><ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-sky-300" /><div><p className="text-sm font-semibold text-slate-100">สถานะ: {status}</p><p className="mt-1 text-xs leading-5 text-slate-300">การตั้งค่านี้เก็บเฉพาะโฟลเดอร์ปลายทาง ไม่มี Token หรือข้อมูลลับแสดงในหน้า Settings</p></div></div>
           {settings.data?.rootFolderUrl && <a href={settings.data.rootFolderUrl} target="_blank" rel="noreferrer" className="mt-3 inline-flex items-center gap-1.5 text-xs font-semibold text-sky-300 hover:text-sky-100"><FolderOpen className="h-3.5 w-3.5" />เปิดโฟลเดอร์ที่บันทึกไว้<ExternalLink className="h-3.5 w-3.5" /></a>}
         </div>
         <div className="flex justify-end"><Button type="submit" disabled={save.isPending} className="h-10 rounded-xl bg-sky-700 hover:bg-sky-800">{save.isPending ? "กำลังบันทึก..." : "บันทึกการตั้งค่า Drive"}</Button></div>
