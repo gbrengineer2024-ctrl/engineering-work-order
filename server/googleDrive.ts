@@ -131,11 +131,11 @@ export async function driveStoragePutPdfFromHtml(
 ): Promise<DriveUploadResult> {
   if (!folderId) throw new Error("Google Drive is not configured: missing rootFolderId");
   const accessToken = await getAccessToken();
-  const baseName = sanitizeFileName(relKey.replace(/\\//g, "_"));
+  const baseName = sanitizeFileName(relKey.replace(/\//g, "_"));
   const tempName = `tmp-${baseName}.html`;
   const boundary = `-------${crypto.randomUUID()}`;
-  const metadataPart = `--${boundary}\\r\\nContent-Type: application/json; charset=UTF-8\\r\\n\\r\\n${JSON.stringify({ name: tempName, mimeType: "application/vnd.google-apps.document", parents: [folderId] })}\\r\\n`;
-  const mediaPart = `--${boundary}\\r\\nContent-Type: text/html; charset=UTF-8\\r\\n\\r\\n${html}\\r\\n--${boundary}--`;
+  const metadataPart = `--${boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${JSON.stringify({ name: tempName, mimeType: "application/vnd.google-apps.document", parents: [folderId] })}\r\n`;
+  const mediaPart = `--${boundary}\r\nContent-Type: text/html; charset=UTF-8\r\n\r\n${html}\r\n--${boundary}--`;
   const createResponse = await fetch(`${DRIVE_UPLOAD_ENDPOINT}?uploadType=multipart&fields=id`, {
     method: "POST",
     headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": `multipart/related; boundary=${boundary}` },
@@ -152,9 +152,9 @@ export async function driveStoragePutPdfFromHtml(
     const pdfBytes = new Uint8Array(await exportResponse.arrayBuffer());
     const pdfBoundary = `-------${crypto.randomUUID()}`;
     const pdfName = `${baseName}.pdf`;
-    const pdfMetadata = `--${pdfBoundary}\\r\\nContent-Type: application/json; charset=UTF-8\\r\\n\\r\\n${JSON.stringify({ name: pdfName, mimeType: "application/pdf", parents: [folderId] })}\\r\\n`;
-    const pdfMediaHeader = `--${pdfBoundary}\\r\\nContent-Type: application/pdf\\r\\n\\r\\n`;
-    const pdfBody = new Blob([pdfMetadata, pdfMediaHeader, pdfBytes, `\\r\\n--${pdfBoundary}--`]);
+    const pdfMetadata = `--${pdfBoundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${JSON.stringify({ name: pdfName, mimeType: "application/pdf", parents: [folderId] })}\r\n`;
+    const pdfMediaHeader = `--${pdfBoundary}\r\nContent-Type: application/pdf\r\n\r\n`;
+    const pdfBody = new Blob([pdfMetadata, pdfMediaHeader, pdfBytes as BlobPart, `\r\n--${pdfBoundary}--`]);
     const uploadResponse = await fetch(`${DRIVE_UPLOAD_ENDPOINT}?uploadType=multipart&fields=id`, {
       method: "POST",
       headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": `multipart/related; boundary=${pdfBoundary}` },
