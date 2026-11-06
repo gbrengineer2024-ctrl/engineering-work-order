@@ -1,4 +1,4 @@
-import { and, desc, eq, gte, like, lte, or, sql } from "drizzle-orm";
+import { and, desc, eq, getTableColumns, gte, inArray, like, lte, or, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { InsertUser, attachments, googleDriveIntegrationSettings, locations, lookups, maintenanceUsers, notifications, partIssues, parts, statusLogs, technicians, users, workOrders } from "../drizzle/schema";
 
@@ -233,10 +233,34 @@ export async function createWorkOrder(input: Omit<typeof workOrders.$inferInsert
   const order = { ...input, woId };
   await db.insert(workOrders).values(order);
   await db.insert(statusLogs).values({ logId: `LOG-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`, woId, toStatus: "OPEN", actorUserId: input.requesterUserId, comment: "สร้างใบแจ้งซ่อม", isCustomerVisible: true });
-  await createNotification({ notificationId: `NTF-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`, recipientUserId: input.requesterUserId, woId, channel: "WEBAPP", title: "WO_CREATED", message: `สร้างใบแจ้งซ่อม ${woId}`, isRead: false, createdAt: new Date() });
-  if (["URGENT", "P1", "CRITICAL"].includes(input.priorityCode.toUpperCase())) {
-    void import("./lineMessaging").then(({ sendLineUrgentAlert }) => sendLineUrgentAlert(woId, input.description)).catch(error => console.warn("[LINE URGENT]", error));
+
+  const createdAt = new Date();
+  await createNotification({ notificationId: `NTF-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`, recipientUserId: input.requesterUserId, woId, channel: "WEBAPP", title: "WO_CREATED", message: `สร้างใบแจ้งซ่อม ${woId}`, isRead: false, createdAt });
+
+  // Notify every active supervisor/admin in the in-app inbox when a new job arrives.
+  const managers = await db.select({ userId: maintenanceUsers.userId }).from(maintenanceUsers)
+    .where(and(inArray(maintenanceUsers.roleCode, ["ADMIN", "SUPERVISOR"]), eq(maintenanceUsers.isActive, true)));
+  for (const manager of managers) {
+    await createNotification({ notificationId: `NTF-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`, recipientUserId: manager.userId, woId, channel: "WEBAPP", title: "WO_NEW_FOR_MANAGER", message: `มีใบงานใหม่ ${woId}`, isRead: false, createdAt });
   }
+
+  // A single eligible on-duty technician is assigned immediately; multiple candidates
+  // remain a supervisor decision to avoid silently choosing between technicians.
+  const onDuty = await db.select({ techId: technicians.techId, currentOpenJobs: technicians.currentOpenJobs, maxOpenJobs: technicians.maxOpenJobs })
+    .from(technicians)
+    .where(and(eq(technicians.isActive, true), eq(technicians.availabilityStatus, "ON_DUTY")));
+  const eligible = onDuty.filter(tech => tech.currentOpenJobs < tech.maxOpenJobs);
+  if (eligible.length === 1) {
+    await assignWorkOrder({ woId, techId: eligible[0].techId, assignedTeam: input.assignedTeam ?? null, actorUserId: "SYSTEM", comment: "มอบหมายอัตโนมัติ: มีช่างเข้าเวรและพร้อมรับงานเพียงคนเดียว" });
+  }
+
+  void import("./lineMessaging").then(async ({ sendLineNewWorkOrderAlert, sendLineUrgentAlert }) => {
+    await sendLineNewWorkOrderAlert({ woId, locationId: input.locationId, description: input.description });
+    if (["URGENT", "P1", "CRITICAL"].includes(input.priorityCode.toUpperCase())) {
+      await sendLineUrgentAlert(woId, input.description);
+    }
+  }).catch(error => console.warn("[LINE NEW WORK ORDER]", error));
+
   return getWorkOrder(woId);
 }
 
@@ -277,7 +301,8 @@ export async function assignWorkOrder(input: { woId: string; techId: string | nu
   await db.update(workOrders).set({ assignedTechId: input.techId, assignedTeam: input.assignedTeam ?? null, statusCode: nextStatus, updatedAt: new Date() }).where(eq(workOrders.woId, input.woId));
   await db.insert(statusLogs).values({ logId: `LOG-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`, woId: input.woId, fromStatus: workOrder.statusCode, toStatus: nextStatus, actorUserId: input.actorUserId, comment: input.comment ?? (input.techId ? `มอบหมายงานให้ ${input.techId}` : "ยกเลิกการมอบหมาย"), isCustomerVisible: true });
   if (input.techId) {
-    await createNotification({ notificationId: `NTF-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`, recipientUserId: input.techId, woId: input.woId, channel: "WEBAPP", title: "WO_ASSIGNED", message: `ได้รับมอบหมายใบงาน ${input.woId}`, isRead: false, createdAt: new Date() });
+    const technicianNotificationRecipient = assignedTechnician?.userId ?? (assignedTechnician?.lineUserId ? `line_${assignedTechnician.lineUserId}` : input.techId);
+    await createNotification({ notificationId: `NTF-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`, recipientUserId: technicianNotificationRecipient, woId: input.woId, channel: "WEBAPP", title: "WO_ASSIGNED", message: `ได้รับมอบหมายใบงาน ${input.woId}`, isRead: false, createdAt: new Date() });
     void import("./lineMessaging").then(({ resolveTechnicianLineRecipient, sendLineAssignmentAlert }) => sendLineAssignmentAlert({ woId: input.woId, technicianLineUserId: resolveTechnicianLineRecipient(technicianLineUserId), locationId: workOrder.locationId, description: workOrder.description })).catch(error => console.warn("[LINE ASSIGNED]", error));
   }
   return getWorkOrder(input.woId);
@@ -374,7 +399,7 @@ export async function listPartIssues(filters: { woId?: string; status?: string }
   const conditions = [];
   if (filters.woId) conditions.push(eq(partIssues.woId, filters.woId));
   if (filters.status) conditions.push(eq(partIssues.issueStatus, filters.status));
-  return db.select().from(partIssues).where(conditions.length ? and(...conditions) : undefined).orderBy(desc(partIssues.issueAt), desc(partIssues.createdAt));
+  return db.select({ ...getTableColumns(partIssues), categoryCode: parts.categoryCode }).from(partIssues).leftJoin(parts, eq(partIssues.partId, parts.partId)).where(conditions.length ? and(...conditions) : undefined).orderBy(desc(partIssues.issueAt), desc(partIssues.createdAt));
 }
 
 export function inventoryAfterApproval(stock: { currentStockQty: number; reservedQty: number; availableQty: number }, qtyApproved: number) {
@@ -479,6 +504,40 @@ export async function approvePartIssue(input: { issueId: string; qtyApproved: nu
     throw new Error("PART_ISSUE_CONCURRENT_UPDATE");
   }
   return { issueId: input.issueId, issueStatus: "APPROVED" as const };
+}
+
+export async function issueConsumablePart(input: { issueId: string; qtyIssued: number; issuedByUserId: string }) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  const [issue] = await db.select().from(partIssues).where(eq(partIssues.issueId, input.issueId)).limit(1);
+  if (!issue) throw new Error("PART_ISSUE_NOT_FOUND");
+  if (issue.issueStatus !== "REQUESTED") throw new Error("PART_ISSUE_NOT_REQUESTED");
+  if (input.qtyIssued <= 0 || input.qtyIssued > issue.qtyRequested) throw new Error("INVALID_ISSUE_QTY");
+  const [part] = await db.select().from(parts).where(eq(parts.partId, issue.partId)).limit(1);
+  if (!part || !part.isActive) throw new Error("PART_NOT_FOUND");
+  if (!/(CONSUMABLE|DISPOSABLE|SUPPLY|วัสดุสิ้นเปลือง)/i.test(part.categoryCode)) throw new Error("PART_IS_NOT_CONSUMABLE");
+  if (input.qtyIssued > part.availableQty) throw new Error("INSUFFICIENT_STOCK");
+  const now = new Date();
+  const currentStockQty = part.currentStockQty - input.qtyIssued;
+  const issueCostThb = String(Number(issue.unitCostThb) * input.qtyIssued);
+  await db.batch([
+    db.update(parts).set({ currentStockQty, availableQty: currentStockQty - part.reservedQty, updatedAt: now }).where(and(
+      eq(parts.partId, part.partId),
+      eq(parts.currentStockQty, part.currentStockQty),
+      eq(parts.reservedQty, part.reservedQty),
+      eq(parts.availableQty, part.availableQty),
+      sql`EXISTS (SELECT 1 FROM ${partIssues} WHERE ${partIssues.issueId} = ${input.issueId} AND ${partIssues.issueStatus} = 'REQUESTED')`,
+    )),
+    db.update(partIssues).set({ qtyApproved: input.qtyIssued, qtyIssued: input.qtyIssued, issueCostThb, approvedByUserId: input.issuedByUserId, approvedAt: now, issueStatus: "ISSUED", issueAt: now, updatedAt: now }).where(and(
+      eq(partIssues.issueId, input.issueId),
+      eq(partIssues.issueStatus, "REQUESTED"),
+      eq(partIssues.qtyRequested, issue.qtyRequested),
+      sql`changes() > 0`,
+    )),
+  ]);
+  const [updatedIssue] = await db.select().from(partIssues).where(eq(partIssues.issueId, input.issueId)).limit(1);
+  if (updatedIssue?.issueStatus !== "ISSUED" || updatedIssue.qtyIssued !== input.qtyIssued) throw new Error("PART_ISSUE_CONCURRENT_UPDATE");
+  return { issueId: input.issueId, issueStatus: "ISSUED" as const };
 }
 
 export async function issuePart(input: { issueId: string; qtyIssued: number }) {

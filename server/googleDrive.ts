@@ -124,6 +124,56 @@ interface DriveUploadResult {
  * `storagePut` (R2) already returns, so callers in routers.ts don't need to
  * branch on the result shape -- only on which function they called.
  */
+export async function driveStoragePutPdfFromHtml(
+  relKey: string,
+  html: string,
+  folderId: string,
+): Promise<DriveUploadResult> {
+  if (!folderId) throw new Error("Google Drive is not configured: missing rootFolderId");
+  const accessToken = await getAccessToken();
+  const baseName = sanitizeFileName(relKey.replace(/\//g, "_"));
+  const tempName = `tmp-${baseName}.html`;
+  const boundary = `-------${crypto.randomUUID()}`;
+  const metadataPart = `--${boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${JSON.stringify({ name: tempName, mimeType: "application/vnd.google-apps.document", parents: [folderId] })}\r\n`;
+  const mediaPart = `--${boundary}\r\nContent-Type: text/html; charset=UTF-8\r\n\r\n${html}\r\n--${boundary}--`;
+  const createResponse = await fetch(`${DRIVE_UPLOAD_ENDPOINT}?uploadType=multipart&fields=id`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": `multipart/related; boundary=${boundary}` },
+    body: new Blob([metadataPart, mediaPart]),
+  });
+  if (!createResponse.ok) throw new Error(`Google Drive report conversion failed (${createResponse.status}): ${(await createResponse.text()).slice(0, 500)}`);
+  const { id: documentId } = await createResponse.json() as { id: string };
+
+  try {
+    const exportResponse = await fetch(`${DRIVE_FILES_ENDPOINT}/${documentId}/export?mimeType=application/pdf`, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    if (!exportResponse.ok) throw new Error(`Google Drive PDF export failed (${exportResponse.status}): ${(await exportResponse.text()).slice(0, 500)}`);
+    const pdfBytes = new Uint8Array(await exportResponse.arrayBuffer());
+    const pdfBoundary = `-------${crypto.randomUUID()}`;
+    const pdfName = `${baseName}.pdf`;
+    const pdfMetadata = `--${pdfBoundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${JSON.stringify({ name: pdfName, mimeType: "application/pdf", parents: [folderId] })}\r\n`;
+    const pdfMediaHeader = `--${pdfBoundary}\r\nContent-Type: application/pdf\r\n\r\n`;
+    const pdfBody = new Blob([pdfMetadata, pdfMediaHeader, pdfBytes as BlobPart, `\r\n--${pdfBoundary}--`]);
+    const uploadResponse = await fetch(`${DRIVE_UPLOAD_ENDPOINT}?uploadType=multipart&fields=id`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": `multipart/related; boundary=${pdfBoundary}` },
+      body: pdfBody,
+    });
+    if (!uploadResponse.ok) throw new Error(`Google Drive PDF upload failed (${uploadResponse.status}): ${(await uploadResponse.text()).slice(0, 500)}`);
+    const { id: fileId } = await uploadResponse.json() as { id: string };
+    const permissionResponse = await fetch(`${DRIVE_FILES_ENDPOINT}/${fileId}/permissions`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ role: "reader", type: "anyone" }),
+    });
+    if (!permissionResponse.ok) throw new Error(`Google Drive PDF permission update failed (${permissionResponse.status}): ${(await permissionResponse.text()).slice(0, 500)}`);
+    return { key: fileId, url: `https://drive.google.com/file/d/${fileId}/view` };
+  } finally {
+    await fetch(`${DRIVE_FILES_ENDPOINT}/${documentId}`, { method: "DELETE", headers: { Authorization: `Bearer ${accessToken}` } }).catch(() => undefined);
+  }
+}
+
 export async function driveStoragePut(
   relKey: string,
   data: Buffer | Uint8Array | string,
