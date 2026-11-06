@@ -117,7 +117,7 @@ async function sendPushMessage(token: string, to: string, text: string) {
   if (!response.ok) throw new Error(`LINE API ตอบกลับ ${response.status}: ${(await response.text()).slice(0, 240)}`);
 }
 
-type LineDispatchKind = "TEST" | "URGENT" | "OVERDUE" | "ASSIGNED" | "COMPLETED";
+type LineDispatchKind = "TEST" | "NEW_WORK_ORDER" | "URGENT" | "OVERDUE" | "ASSIGNED" | "COMPLETED";
 
 export function missingLineRecipientReason(kind: LineDispatchKind) {
   if (kind === "ASSIGNED") return "ช่างที่ได้รับมอบหมายยังไม่มี LINE User ID จากการเข้าสู่ระบบ LINE";
@@ -164,6 +164,10 @@ async function dispatch(kind: LineDispatchKind, text: string, recipientOverride?
 export async function testLineIntegration() {
   const result = await dispatch("TEST", "[ทดสอบระบบ] เชื่อมต่อ LINE Messaging API สำเร็จจากระบบศูนย์งานซ่อมบำรุงโรงแรม");
   return { ...result, testedAt: new Date() };
+}
+
+export async function sendLineNewWorkOrderAlert(input: { woId: string; locationId: string; description: string }) {
+  return dispatch("NEW_WORK_ORDER", `[ใบงานใหม่] ${input.woId}\nพื้นที่: ${input.locationId}\nรายละเอียด: ${input.description}`);
 }
 
 export async function sendLineUrgentAlert(woId: string, description: string) {
