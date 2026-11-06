@@ -6,7 +6,7 @@ import { adminProcedure, protectedProcedure, publicProcedure, router } from "./_
 import { addAttachment, addStatusLog as changeStatusInDb, approvePartIssue, assignWorkOrder, completeLineProfile, createLocation, createPart, createTechnician, createWorkOrder, getDashboardStats, getGoogleDriveIntegrationSettings, getMaintenanceProfile, getWorkOrder, getTechnicianIdForUser, hasWorkOrderAttachmentType, issueConsumablePart, issuePart, listLocations, listLookups, listMaintenanceUsers, listNotifications, listPartIssues, listParts, listTechnicians, listWorkOrders, markNotificationRead, requestPartIssue, saveGoogleDriveIntegrationSettings, setWorkOrderPendingParts, updateLocation, updateMaintenanceUser, updatePart, updateTechnician, updateTechnicianAvailability, updateWorkOrder } from "./db";
 import { getLineIntegrationPublicSettings, saveLineIntegrationSettings, testLineIntegration } from "./lineMessaging";
 import { storagePut } from "./storage";
-import { driveStoragePut, driveStoragePutPdfFromHtml } from "./googleDrive";
+import { appsScriptStoragePut, appsScriptStoragePutPdfFromHtml } from "./googleAppsScript";
 import { ENV } from "./_core/env";
 
 const statusSchema = z.enum(["OPEN", "ASSIGNED", "IN_PROGRESS", "PENDING_PARTS", "COMPLETED", "CLOSED"]);
@@ -136,7 +136,7 @@ export const appRouter = router({
       if (detail.workOrder.statusCode !== "PENDING_PARTS") throw new Error("REPORT_REQUIRES_PENDING_PARTS_STATUS");
       const driveSettings = await getGoogleDriveIntegrationSettings();
       if (!driveSettings.isEnabled || !driveSettings.rootFolderId) throw new Error("กรุณาเปิด Google Drive และกำหนดโฟลเดอร์ปลายทางในเมนูตั้งค่าก่อนสร้าง PDF");
-      if (!ENV.googleServiceAccountEmail || !ENV.googlePrivateKey) throw new Error("Google Drive ยังไม่ได้ตั้งค่า Service Account Secrets: GOOGLE_SERVICE_ACCOUNT_EMAIL และ GOOGLE_PRIVATE_KEY");
+      if (!ENV.googleAppsScriptUrl || !ENV.googleAppsScriptToken) throw new Error("Google Drive ยังไม่ได้ตั้งค่า Apps Script: GOOGLE_APPS_SCRIPT_URL และ GOOGLE_APPS_SCRIPT_TOKEN");
       const [issueRows, locationRows] = await Promise.all([listPartIssues({ woId: input.woId }), listLocations()]);
       const locationName = locationRows.find(location => location.locationId === detail.workOrder.locationId)?.areaName ?? detail.workOrder.locationId;
       const issueHtml = issueRows.length
@@ -144,7 +144,7 @@ export const appRouter = router({
         : "<tr><td colspan=\"6\">ยังไม่มีรายการขอเบิกอะไหล่</td></tr>";
       const order = detail.workOrder;
       const html = `<!doctype html><html lang="th"><head><meta charset="utf-8"><style>body{font-family:Arial,sans-serif;color:#172033;margin:32px}h1{font-size:22px;margin-bottom:6px}.status{display:inline-block;padding:6px 12px;background:#ffedd5;color:#9a3412;border-radius:16px;font-weight:bold}dl{display:grid;grid-template-columns:130px 1fr;gap:8px 12px;margin:24px 0}dt{color:#64748b}dd{margin:0}table{border-collapse:collapse;width:100%;margin-top:18px}th,td{border:1px solid #cbd5e1;padding:8px;text-align:left;font-size:11px}th{background:#f1f5f9}footer{margin-top:24px;color:#64748b;font-size:10px}</style></head><body><span class="status">รออะไหล่ / PENDING PARTS</span><h1>รายงานใบงาน ${escapeHtml(order.woId)}</h1><dl><dt>พื้นที่</dt><dd>${escapeHtml(locationName)}</dd><dt>รายละเอียด</dt><dd>${escapeHtml(order.description)}</dd><dt>วันที่เปิดงาน</dt><dd>${escapeHtml(new Date(order.createdAt).toLocaleString("th-TH"))}</dd><dt>วันที่จัดทำรายงาน</dt><dd>${escapeHtml(new Date().toLocaleString("th-TH"))}</dd></dl><h2>รายการอะไหล่ / วัสดุที่ขอเบิก</h2><table><thead><tr><th>รหัส</th><th>รายการ</th><th>ขอเบิก</th><th>อนุมัติ</th><th>จ่ายแล้ว</th><th>สถานะ</th></tr></thead><tbody>${issueHtml}</tbody></table><footer>เอกสารนี้สร้างจากระบบแจ้งซ่อมโดยอัตโนมัติ</footer></body></html>`;
-      const stored = await driveStoragePutPdfFromHtml(`pending-parts-${order.woId}-${Date.now()}`, html, driveSettings.rootFolderId);
+      const stored = await appsScriptStoragePutPdfFromHtml(`pending-parts-${order.woId}-${Date.now()}`, html, driveSettings.rootFolderId);
       return { url: stored.url, fileName: `pending-parts-${order.woId}.pdf` };
     }),
     uploadAttachment: protectedProcedure.input(z.object({ woId: z.string().min(1), attachmentType: z.enum(["BEFORE", "AFTER", "OTHER"]).default("OTHER"), fileName: z.string().min(1).max(255), mimeType: z.string().min(1).max(120), fileDataBase64: z.string().min(1), uploadedBy: actorSchema })).mutation(async ({ input, ctx }) => {
@@ -157,7 +157,7 @@ export const appRouter = router({
       const storageKey = `work-orders/${input.woId}/${Date.now()}-${input.fileName.replace(/[^a-zA-Z0-9._-]/g, "_")}`;
       const driveSettings = await getGoogleDriveIntegrationSettings();
       const stored = driveSettings.isEnabled && driveSettings.rootFolderId
-        ? await driveStoragePut(storageKey, bytes, input.mimeType, driveSettings.rootFolderId)
+        ? await appsScriptStoragePut(storageKey, bytes, input.mimeType, driveSettings.rootFolderId)
         : await storagePut(storageKey, bytes, input.mimeType);
       return addAttachment({ attachmentId: `ATT-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`, woId: input.woId, attachmentType: input.attachmentType, fileName: input.fileName, fileUrl: stored.url, mimeType: input.mimeType, fileSize: bytes.byteLength, uploadedBy: auditActor(ctx.user, input.uploadedBy), createdAt: new Date() });
     }),
@@ -215,7 +215,7 @@ export const appRouter = router({
       test: adminProcedure.mutation(() => testLineIntegration()),
     }),
     googleDrive: router({
-      settings: adminProcedure.query(async () => ({ ...(await getGoogleDriveIntegrationSettings()), credentialsConfigured: Boolean(ENV.googleServiceAccountEmail && ENV.googlePrivateKey) })),
+      settings: adminProcedure.query(async () => ({ ...(await getGoogleDriveIntegrationSettings()), credentialsConfigured: Boolean(ENV.googleAppsScriptUrl && ENV.googleAppsScriptToken) })),
       save: adminProcedure.input(z.object({
         isEnabled: z.boolean(),
         rootFolderId: googleDriveFolderIdSchema.nullable().optional(),
