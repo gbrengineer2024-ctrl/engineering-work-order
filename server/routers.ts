@@ -51,7 +51,7 @@ async function assertWorkOrderAccess(user: { openId: string; role?: string }, wo
   throw new Error("FORBIDDEN");
 }
 
-const allowedTransitions: Record<string, string[]> = { OPEN: ["ASSIGNED", "IN_PROGRESS", "PENDING_PARTS"], ASSIGNED: ["IN_PROGRESS", "PENDING_PARTS"], IN_PROGRESS: ["PENDING_PARTS", "COMPLETED"], PENDING_PARTS: ["IN_PROGRESS"], COMPLETED: ["CLOSED"], CLOSED: [] };
+const allowedTransitions: Record<string, string[]> = { OPEN: ["ASSIGNED", "IN_PROGRESS", "PENDING_PARTS"], ASSIGNED: ["IN_PROGRESS", "PENDING_PARTS"], IN_PROGRESS: ["PENDING_PARTS", "COMPLETED"], PENDING_PARTS: ["IN_PROGRESS", "COMPLETED"], COMPLETED: ["CLOSED"], CLOSED: [] };
 
 export const appRouter = router({
   system: systemRouter,
