@@ -7,6 +7,7 @@ import { addAttachment, addStatusLog as changeStatusInDb, approvePartIssue, assi
 import { getLineIntegrationPublicSettings, saveLineIntegrationSettings, testLineIntegration } from "./lineMessaging";
 import { storagePut } from "./storage";
 import { driveStoragePut } from "./googleDrive";
+import { ENV } from "./_core/env";
 
 const statusSchema = z.enum(["OPEN", "ASSIGNED", "IN_PROGRESS", "PENDING_PARTS", "COMPLETED", "CLOSED"]);
 const roleSchema = z.enum(["ADMIN", "REPORTER", "SUPERVISOR", "TECHNICIAN"]);
@@ -192,7 +193,7 @@ export const appRouter = router({
       test: adminProcedure.mutation(() => testLineIntegration()),
     }),
     googleDrive: router({
-      settings: adminProcedure.query(() => getGoogleDriveIntegrationSettings()),
+      settings: adminProcedure.query(async () => ({ ...(await getGoogleDriveIntegrationSettings()), credentialsConfigured: Boolean(ENV.googleServiceAccountEmail && ENV.googlePrivateKey) })),
       save: adminProcedure.input(z.object({
         isEnabled: z.boolean(),
         rootFolderId: googleDriveFolderIdSchema.nullable().optional(),
