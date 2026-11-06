@@ -3,7 +3,7 @@ import { COOKIE_NAME } from "@shared/const";
 import { clearCookie, getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { adminProcedure, protectedProcedure, publicProcedure, router } from "./_core/trpc";
-import { addAttachment, addStatusLog as changeStatusInDb, approvePartIssue, assignWorkOrder, completeLineProfile, createLocation, createPart, createTechnician, createWorkOrder, getDashboardStats, getGoogleDriveIntegrationSettings, getMaintenanceProfile, getWorkOrder, getTechnicianIdForUser, hasWorkOrderAttachmentType, issuePart, listLocations, listLookups, listMaintenanceUsers, listNotifications, listPartIssues, listParts, listTechnicians, listWorkOrders, markNotificationRead, requestPartIssue, saveGoogleDriveIntegrationSettings, setWorkOrderPendingParts, updateLocation, updateMaintenanceUser, updatePart, updateTechnician, updateTechnicianAvailability, updateWorkOrder } from "./db";
+import { addAttachment, addStatusLog as changeStatusInDb, approvePartIssue, assignWorkOrder, completeLineProfile, createLocation, createPart, createTechnician, createWorkOrder, getDashboardStats, getGoogleDriveIntegrationSettings, getMaintenanceProfile, getWorkOrder, getTechnicianIdForUser, hasWorkOrderAttachmentType, issueConsumablePart, issuePart, listLocations, listLookups, listMaintenanceUsers, listNotifications, listPartIssues, listParts, listTechnicians, listWorkOrders, markNotificationRead, requestPartIssue, saveGoogleDriveIntegrationSettings, setWorkOrderPendingParts, updateLocation, updateMaintenanceUser, updatePart, updateTechnician, updateTechnicianAvailability, updateWorkOrder } from "./db";
 import { getLineIntegrationPublicSettings, saveLineIntegrationSettings, testLineIntegration } from "./lineMessaging";
 import { storagePut } from "./storage";
 import { driveStoragePut, driveStoragePutPdfFromHtml } from "./googleDrive";
@@ -195,6 +195,7 @@ export const appRouter = router({
     }),
     approve: protectedProcedure.input(z.object({ issueId: z.string().min(1), qtyApproved: z.coerce.number().int().positive() })).mutation(({ input, ctx }) => canManage(ctx.user) ? approvePartIssue({ ...input, approvedByUserId: ctx.user.openId }) : Promise.reject(new Error("FORBIDDEN"))),
     issue: protectedProcedure.input(z.object({ issueId: z.string().min(1), qtyIssued: z.coerce.number().int().positive() })).mutation(({ input, ctx }) => canManage(ctx.user) ? issuePart(input) : Promise.reject(new Error("FORBIDDEN"))),
+    issueConsumable: protectedProcedure.input(z.object({ issueId: z.string().min(1), qtyIssued: z.coerce.number().int().positive() })).mutation(({ input, ctx }) => canManage(ctx.user) ? issueConsumablePart({ ...input, issuedByUserId: auditActor(ctx.user) }) : Promise.reject(new Error("FORBIDDEN"))),
   }),
   notifications: router({
     list: protectedProcedure.query(({ ctx }) => listNotifications(ctx.user.openId)),
