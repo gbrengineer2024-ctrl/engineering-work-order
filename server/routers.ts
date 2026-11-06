@@ -137,13 +137,63 @@ export const appRouter = router({
       const driveSettings = await getGoogleDriveIntegrationSettings();
       if (!driveSettings.isEnabled || !driveSettings.rootFolderId) throw new Error("กรุณาเปิด Google Drive และกำหนดโฟลเดอร์ปลายทางในเมนูตั้งค่าก่อนสร้าง PDF");
       if (!ENV.googleAppsScriptUrl || !ENV.googleAppsScriptToken) throw new Error("Google Drive ยังไม่ได้ตั้งค่า Apps Script: GOOGLE_APPS_SCRIPT_URL และ GOOGLE_APPS_SCRIPT_TOKEN");
-      const [issueRows, locationRows] = await Promise.all([listPartIssues({ woId: input.woId }), listLocations()]);
-      const locationName = locationRows.find(location => location.locationId === detail.workOrder.locationId)?.areaName ?? detail.workOrder.locationId;
-      const issueHtml = issueRows.length
-        ? issueRows.map(issue => `<tr><td>${escapeHtml(issue.partCode)}</td><td>${escapeHtml(issue.partNameTh)}</td><td>${issue.qtyRequested} ${escapeHtml(issue.unit)}</td><td>${issue.qtyApproved} ${escapeHtml(issue.unit)}</td><td>${issue.qtyIssued} ${escapeHtml(issue.unit)}</td><td>${escapeHtml(issue.issueStatus)}</td></tr>`).join("")
-        : "<tr><td colspan=\"6\">ยังไม่มีรายการขอเบิกอะไหล่</td></tr>";
+      const [issueRows, locationRows, technicianRows] = await Promise.all([
+        listPartIssues({ woId: input.woId }),
+        listLocations(),
+        listTechnicians(),
+      ]);
       const order = detail.workOrder;
-      const html = `<!doctype html><html lang="th"><head><meta charset="utf-8"><style>body{font-family:Arial,sans-serif;color:#172033;margin:32px}h1{font-size:22px;margin-bottom:6px}.status{display:inline-block;padding:6px 12px;background:#ffedd5;color:#9a3412;border-radius:16px;font-weight:bold}dl{display:grid;grid-template-columns:130px 1fr;gap:8px 12px;margin:24px 0}dt{color:#64748b}dd{margin:0}table{border-collapse:collapse;width:100%;margin-top:18px}th,td{border:1px solid #cbd5e1;padding:8px;text-align:left;font-size:11px}th{background:#f1f5f9}footer{margin-top:24px;color:#64748b;font-size:10px}</style></head><body><span class="status">รออะไหล่ / PENDING PARTS</span><h1>รายงานใบงาน ${escapeHtml(order.woId)}</h1><dl><dt>พื้นที่</dt><dd>${escapeHtml(locationName)}</dd><dt>รายละเอียด</dt><dd>${escapeHtml(order.description)}</dd><dt>วันที่เปิดงาน</dt><dd>${escapeHtml(new Date(order.createdAt).toLocaleString("th-TH"))}</dd><dt>วันที่จัดทำรายงาน</dt><dd>${escapeHtml(new Date().toLocaleString("th-TH"))}</dd></dl><h2>รายการอะไหล่ / วัสดุที่ขอเบิก</h2><table><thead><tr><th>รหัส</th><th>รายการ</th><th>ขอเบิก</th><th>อนุมัติ</th><th>จ่ายแล้ว</th><th>สถานะ</th></tr></thead><tbody>${issueHtml}</tbody></table><footer>เอกสารนี้สร้างจากระบบแจ้งซ่อมโดยอัตโนมัติ</footer></body></html>`;
+      const locationName = locationRows.find(location => location.locationId === order.locationId)?.areaName ?? order.locationId;
+      const technicianName = technicianRows.find(technician => technician.techId === order.assignedTechId)?.techName ?? "ยังไม่มอบหมาย";
+      const issueHtml = issueRows.length
+        ? issueRows.map(issue => \`<tr><td>\${escapeHtml(issue.partCode)}</td><td>\${escapeHtml(issue.partNameTh)}</td><td class="num">\${issue.qtyRequested} \${escapeHtml(issue.unit)}</td><td class="num">\${issue.qtyApproved} \${escapeHtml(issue.unit)}</td><td class="num">\${issue.qtyIssued} \${escapeHtml(issue.unit)}</td><td>\${escapeHtml(issue.issueStatus)}</td></tr>\`).join("")
+        : "<tr><td colspan=\\"6\\" class=\\"empty\\">ยังไม่มีรายการขอเบิกอะไหล่</td></tr>";
+      const reportDate = new Date().toLocaleDateString("th-TH");
+      const workDate = new Date(order.createdAt).toLocaleDateString("th-TH");
+      const html = \`<!doctype html><html lang="th"><head><meta charset="utf-8"><style>
+        @page{size:A4;margin:18mm 16mm}
+        *{box-sizing:border-box}
+        body{font-family:Arial,"Noto Sans Thai",sans-serif;color:#171717;margin:0;font-size:11pt;line-height:1.5}
+        .top{display:flex;justify-content:space-between;align-items:flex-start;gap:24px;padding-bottom:16px;border-bottom:1px solid #999}
+        .hotel{font-size:16pt;font-weight:700;margin:0 0 4px}
+        .department{font-size:11pt;margin:0;color:#333}
+        .doc-title{text-align:right;font-size:15pt;font-weight:700;white-space:nowrap}
+        .doc-date{text-align:right;margin-top:4px;font-size:10pt}
+        .meta{display:grid;grid-template-columns:1fr 1fr;column-gap:24px;row-gap:8px;margin:24px 0 18px}
+        .meta-row{display:flex;gap:5px;min-width:0}
+        .meta-label{white-space:nowrap}
+        .meta-value{font-weight:500;overflow-wrap:anywhere}
+        .job-title{font-size:12pt;font-weight:700;margin:8px 0 10px}
+        .job-details{border-top:1px solid #999;padding-top:10px;min-height:46px;white-space:pre-wrap;overflow-wrap:anywhere}
+        .status{display:inline-block;margin-top:16px;padding:4px 10px;border-radius:3px;background:#fff0df;color:#9a3412;font-size:9pt;font-weight:700}
+        .parts-title{font-size:12pt;font-weight:700;margin:22px 0 8px}
+        table{border-collapse:collapse;width:100%;table-layout:fixed;margin-top:8px}
+        th,td{border:1px solid #b8c0c8;padding:8px 7px;text-align:left;font-size:9pt;overflow-wrap:anywhere}
+        th{background:#f1f3f5;font-weight:700}
+        td.num{text-align:center}
+        .empty{text-align:center;color:#666;padding:16px}
+        footer{margin-top:26px;padding-top:8px;border-top:1px solid #ddd;color:#777;font-size:8pt}
+        @media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
+      </style></head><body>
+        <header class="top">
+          <div><p class="hotel">Tara Bangkok Riverside</p><p class="department">Engineering Department</p></div>
+          <div><div class="doc-title">MAINTENANCE WORK ORDER</div><div class="doc-date">Date : \${escapeHtml(reportDate)}</div></div>
+        </header>
+        <section class="meta">
+          <div class="meta-row"><span class="meta-label">Rooms or Locations :</span><span class="meta-value">\${escapeHtml(locationName)}</span></div>
+          <div class="meta-row"><span class="meta-label">Technician :</span><span class="meta-value">\${escapeHtml(technicianName)}</span></div>
+          <div class="meta-row"><span class="meta-label">Status :</span><span class="meta-value">Pending Parts</span></div>
+          <div class="meta-row"><span class="meta-label">Work Type :</span><span class="meta-value">\${escapeHtml(order.categoryCode ?? "—")}</span></div>
+        </section>
+        <h2 class="job-title">Job Details</h2>
+        <div class="job-details">\${escapeHtml(order.description)}</div>
+        <div class="meta-row" style="margin-top:10px"><span class="meta-label">Work Order :</span><span class="meta-value">\${escapeHtml(order.woId)}</span></div>
+        <div class="meta-row"><span class="meta-label">Date Opened :</span><span class="meta-value">\${escapeHtml(workDate)}</span></div>
+        <div class="status">รออะไหล่ / PENDING PARTS</div>
+        <h2 class="parts-title">รายการอะไหล่ / วัสดุที่ขอเบิก</h2>
+        <table><thead><tr><th style="width:14%">รหัส</th><th style="width:25%">รายการ</th><th style="width:14%">ขอเบิก</th><th style="width:14%">อนุมัติ</th><th style="width:14%">จ่ายแล้ว</th><th style="width:19%">สถานะ</th></tr></thead><tbody>\${issueHtml}</tbody></table>
+        <footer>เอกสารนี้สร้างจากระบบแจ้งซ่อมโดยอัตโนมัติ · Report Date : \${escapeHtml(reportDate)}</footer>
+      </body></html>\`;
       const stored = await appsScriptStoragePutPdfFromHtml(`pending-parts-${order.woId}-${Date.now()}`, html, driveSettings.rootFolderId);
       return { url: stored.url, fileName: `pending-parts-${order.woId}.pdf` };
     }),
