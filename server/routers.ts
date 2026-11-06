@@ -131,6 +131,7 @@ export const appRouter = router({
       return setWorkOrderPendingParts({ ...input, actorUserId: auditActor(ctx.user) });
     }),
     createPendingPartsReportPdf: protectedProcedure.input(z.object({ woId: z.string().min(1) })).mutation(async ({ input, ctx }) => {
+      if (!canChangeStatus(ctx.user, "PENDING_PARTS")) throw new Error("FORBIDDEN");
       const detail = await assertWorkOrderAccess(ctx.user, input.woId);
       if (detail.workOrder.statusCode !== "PENDING_PARTS") throw new Error("REPORT_REQUIRES_PENDING_PARTS_STATUS");
       const driveSettings = await getGoogleDriveIntegrationSettings();
