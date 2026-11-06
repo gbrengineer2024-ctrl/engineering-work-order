@@ -1,4 +1,4 @@
-import { and, desc, eq, gte, like, lte, or, sql } from "drizzle-orm";
+import { and, desc, eq, gte, inArray, like, lte, or, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { InsertUser, attachments, googleDriveIntegrationSettings, locations, lookups, maintenanceUsers, notifications, partIssues, parts, statusLogs, technicians, users, workOrders } from "../drizzle/schema";
 
@@ -233,10 +233,34 @@ export async function createWorkOrder(input: Omit<typeof workOrders.$inferInsert
   const order = { ...input, woId };
   await db.insert(workOrders).values(order);
   await db.insert(statusLogs).values({ logId: `LOG-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`, woId, toStatus: "OPEN", actorUserId: input.requesterUserId, comment: "สร้างใบแจ้งซ่อม", isCustomerVisible: true });
-  await createNotification({ notificationId: `NTF-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`, recipientUserId: input.requesterUserId, woId, channel: "WEBAPP", title: "WO_CREATED", message: `สร้างใบแจ้งซ่อม ${woId}`, isRead: false, createdAt: new Date() });
-  if (["URGENT", "P1", "CRITICAL"].includes(input.priorityCode.toUpperCase())) {
-    void import("./lineMessaging").then(({ sendLineUrgentAlert }) => sendLineUrgentAlert(woId, input.description)).catch(error => console.warn("[LINE URGENT]", error));
+
+  const createdAt = new Date();
+  await createNotification({ notificationId: `NTF-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`, recipientUserId: input.requesterUserId, woId, channel: "WEBAPP", title: "WO_CREATED", message: `สร้างใบแจ้งซ่อม ${woId}`, isRead: false, createdAt });
+
+  // Notify every active supervisor/admin in the in-app inbox when a new job arrives.
+  const managers = await db.select({ userId: maintenanceUsers.userId }).from(maintenanceUsers)
+    .where(and(inArray(maintenanceUsers.roleCode, ["ADMIN", "SUPERVISOR"]), eq(maintenanceUsers.isActive, true)));
+  for (const manager of managers) {
+    await createNotification({ notificationId: `NTF-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`, recipientUserId: manager.userId, woId, channel: "WEBAPP", title: "WO_NEW_FOR_MANAGER", message: `มีใบงานใหม่ ${woId}`, isRead: false, createdAt });
   }
+
+  // A single eligible on-duty technician is assigned immediately; multiple candidates
+  // remain a supervisor decision to avoid silently choosing between technicians.
+  const onDuty = await db.select({ techId: technicians.techId, currentOpenJobs: technicians.currentOpenJobs, maxOpenJobs: technicians.maxOpenJobs })
+    .from(technicians)
+    .where(and(eq(technicians.isActive, true), eq(technicians.availabilityStatus, "ON_DUTY")));
+  const eligible = onDuty.filter(tech => tech.currentOpenJobs < tech.maxOpenJobs);
+  if (eligible.length === 1) {
+    await assignWorkOrder({ woId, techId: eligible[0].techId, assignedTeam: input.assignedTeam ?? null, actorUserId: "SYSTEM", comment: "มอบหมายอัตโนมัติ: มีช่างเข้าเวรและพร้อมรับงานเพียงคนเดียว" });
+  }
+
+  void import("./lineMessaging").then(async ({ sendLineNewWorkOrderAlert, sendLineUrgentAlert }) => {
+    await sendLineNewWorkOrderAlert({ woId, locationId: input.locationId, description: input.description });
+    if (["URGENT", "P1", "CRITICAL"].includes(input.priorityCode.toUpperCase())) {
+      await sendLineUrgentAlert(woId, input.description);
+    }
+  }).catch(error => console.warn("[LINE NEW WORK ORDER]", error));
+
   return getWorkOrder(woId);
 }
 
