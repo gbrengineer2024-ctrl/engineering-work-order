@@ -146,11 +146,11 @@ export const appRouter = router({
       const locationName = locationRows.find(location => location.locationId === order.locationId)?.areaName ?? order.locationId;
       const technicianName = technicianRows.find(technician => technician.techId === order.assignedTechId)?.techName ?? "ยังไม่มอบหมาย";
       const issueHtml = issueRows.length
-        ? issueRows.map(issue => \`<tr><td>\${escapeHtml(issue.partCode)}</td><td>\${escapeHtml(issue.partNameTh)}</td><td class="num">\${issue.qtyRequested} \${escapeHtml(issue.unit)}</td><td class="num">\${issue.qtyApproved} \${escapeHtml(issue.unit)}</td><td class="num">\${issue.qtyIssued} \${escapeHtml(issue.unit)}</td><td>\${escapeHtml(issue.issueStatus)}</td></tr>\`).join("")
-        : "<tr><td colspan=\\"6\\" class=\\"empty\\">ยังไม่มีรายการขอเบิกอะไหล่</td></tr>";
+        ? issueRows.map(issue => `<tr><td>${escapeHtml(issue.partCode)}</td><td>${escapeHtml(issue.partNameTh)}</td><td class="num">${issue.qtyRequested} ${escapeHtml(issue.unit)}</td><td class="num">${issue.qtyApproved} ${escapeHtml(issue.unit)}</td><td class="num">${issue.qtyIssued} ${escapeHtml(issue.unit)}</td><td>${escapeHtml(issue.issueStatus)}</td></tr>`).join("")
+        : "<tr><td colspan=\"6\" class=\"empty\">ยังไม่มีรายการขอเบิกอะไหล่</td></tr>";
       const reportDate = new Date().toLocaleDateString("th-TH");
       const workDate = new Date(order.createdAt).toLocaleDateString("th-TH");
-      const html = \`<!doctype html><html lang="th"><head><meta charset="utf-8"><style>
+      const html = `<!doctype html><html lang="th"><head><meta charset="utf-8"><style>
         @page{size:A4;margin:18mm 16mm}
         *{box-sizing:border-box}
         body{font-family:Arial,"Noto Sans Thai",sans-serif;color:#171717;margin:0;font-size:11pt;line-height:1.5}
@@ -177,23 +177,23 @@ export const appRouter = router({
       </style></head><body>
         <header class="top">
           <div><p class="hotel">Tara Bangkok Riverside</p><p class="department">Engineering Department</p></div>
-          <div><div class="doc-title">MAINTENANCE WORK ORDER</div><div class="doc-date">Date : \${escapeHtml(reportDate)}</div></div>
+          <div><div class="doc-title">MAINTENANCE WORK ORDER</div><div class="doc-date">Date : ${escapeHtml(reportDate)}</div></div>
         </header>
         <section class="meta">
-          <div class="meta-row"><span class="meta-label">Rooms or Locations :</span><span class="meta-value">\${escapeHtml(locationName)}</span></div>
-          <div class="meta-row"><span class="meta-label">Technician :</span><span class="meta-value">\${escapeHtml(technicianName)}</span></div>
+          <div class="meta-row"><span class="meta-label">Rooms or Locations :</span><span class="meta-value">${escapeHtml(locationName)}</span></div>
+          <div class="meta-row"><span class="meta-label">Technician :</span><span class="meta-value">${escapeHtml(technicianName)}</span></div>
           <div class="meta-row"><span class="meta-label">Status :</span><span class="meta-value">Pending Parts</span></div>
-          <div class="meta-row"><span class="meta-label">Work Type :</span><span class="meta-value">\${escapeHtml(order.categoryCode ?? "—")}</span></div>
+          <div class="meta-row"><span class="meta-label">Work Type :</span><span class="meta-value">${escapeHtml(order.categoryCode ?? "—")}</span></div>
         </section>
         <h2 class="job-title">Job Details</h2>
-        <div class="job-details">\${escapeHtml(order.description)}</div>
-        <div class="meta-row" style="margin-top:10px"><span class="meta-label">Work Order :</span><span class="meta-value">\${escapeHtml(order.woId)}</span></div>
-        <div class="meta-row"><span class="meta-label">Date Opened :</span><span class="meta-value">\${escapeHtml(workDate)}</span></div>
+        <div class="job-details">${escapeHtml(order.description)}</div>
+        <div class="meta-row" style="margin-top:10px"><span class="meta-label">Work Order :</span><span class="meta-value">${escapeHtml(order.woId)}</span></div>
+        <div class="meta-row"><span class="meta-label">Date Opened :</span><span class="meta-value">${escapeHtml(workDate)}</span></div>
         <div class="status">รออะไหล่ / PENDING PARTS</div>
         <h2 class="parts-title">รายการอะไหล่ / วัสดุที่ขอเบิก</h2>
-        <table><thead><tr><th style="width:14%">รหัส</th><th style="width:25%">รายการ</th><th style="width:14%">ขอเบิก</th><th style="width:14%">อนุมัติ</th><th style="width:14%">จ่ายแล้ว</th><th style="width:19%">สถานะ</th></tr></thead><tbody>\${issueHtml}</tbody></table>
-        <footer>เอกสารนี้สร้างจากระบบแจ้งซ่อมโดยอัตโนมัติ · Report Date : \${escapeHtml(reportDate)}</footer>
-      </body></html>\`;
+        <table><thead><tr><th style="width:14%">รหัส</th><th style="width:25%">รายการ</th><th style="width:14%">ขอเบิก</th><th style="width:14%">อนุมัติ</th><th style="width:14%">จ่ายแล้ว</th><th style="width:19%">สถานะ</th></tr></thead><tbody>${issueHtml}</tbody></table>
+        <footer>เอกสารนี้สร้างจากระบบแจ้งซ่อมโดยอัตโนมัติ · Report Date : ${escapeHtml(reportDate)}</footer>
+      </body></html>`;
       const stored = await appsScriptStoragePutPdfFromHtml(`pending-parts-${order.woId}-${Date.now()}`, html, driveSettings.rootFolderId);
       return { url: stored.url, fileName: `pending-parts-${order.woId}.pdf` };
     }),
