@@ -18,6 +18,8 @@ export interface WorkerEnv {
   // google_drive_integration_settings.isEnabled is true (see googleDrive.ts).
   GOOGLE_SERVICE_ACCOUNT_EMAIL?: string;
   GOOGLE_PRIVATE_KEY?: string;
+  GOOGLE_APPS_SCRIPT_URL?: string;
+  GOOGLE_APPS_SCRIPT_TOKEN?: string;
 }
 
 export const ENV = {
@@ -31,6 +33,8 @@ export const ENV = {
   publicAppBaseUrl: "",
   googleServiceAccountEmail: "",
   googlePrivateKey: "",
+  googleAppsScriptUrl: "",
+  googleAppsScriptToken: "",
 };
 
 export function bindEnv(env: WorkerEnv) {
@@ -44,4 +48,6 @@ export function bindEnv(env: WorkerEnv) {
   ENV.publicAppBaseUrl = env.PUBLIC_APP_BASE_URL ?? "";
   ENV.googleServiceAccountEmail = env.GOOGLE_SERVICE_ACCOUNT_EMAIL ?? "";
   ENV.googlePrivateKey = env.GOOGLE_PRIVATE_KEY ?? "";
+  ENV.googleAppsScriptUrl = env.GOOGLE_APPS_SCRIPT_URL ?? "";
+  ENV.googleAppsScriptToken = env.GOOGLE_APPS_SCRIPT_TOKEN ?? "";
 }
