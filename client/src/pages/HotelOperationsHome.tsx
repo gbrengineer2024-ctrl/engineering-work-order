@@ -20,12 +20,12 @@ import { getAuthScreenState } from "@/lib/authScreenState";
 const roleLabels: Record<string, string> = { ADMIN: "ผู้ดูแลระบบ", REPORTER: "ผู้แจ้งงาน", SUPERVISOR: "หัวหน้างาน", TECHNICIAN: "ช่างเทคนิค" };
 const statusLabels: Record<string, string> = { OPEN: "เปิดงาน", ASSIGNED: "มอบหมายแล้ว", IN_PROGRESS: "กำลังดำเนินการ", PENDING_PARTS: "รออะไหล่", COMPLETED: "เสร็จงาน", CLOSED: "ปิดงาน" };
 const statusTone: Record<string, string> = {
-  OPEN: "bg-sky-400/15 text-sky-200 ring-sky-300/20", ASSIGNED: "bg-violet-400/15 text-violet-200 ring-violet-300/20",
-  IN_PROGRESS: "bg-amber-400/15 text-amber-100 ring-amber-300/20", PENDING_PARTS: "bg-orange-400/15 text-orange-100 ring-orange-300/20",
-  COMPLETED: "bg-emerald-400/15 text-emerald-100 ring-emerald-300/20", CLOSED: "bg-slate-300/10 text-slate-300 ring-slate-300/15",
+  OPEN: "bg-sky-100 text-sky-800 ring-sky-200", ASSIGNED: "bg-violet-100 text-violet-800 ring-violet-200",
+  IN_PROGRESS: "bg-amber-100 text-amber-900 ring-amber-200", PENDING_PARTS: "bg-orange-100 text-orange-900 ring-orange-200",
+  COMPLETED: "bg-emerald-100 text-emerald-800 ring-emerald-200", CLOSED: "bg-slate-100 text-slate-700 ring-slate-200",
 };
 const availabilityLabels: Record<string, string> = { ON_DUTY: "เข้าเวร", OFF_DUTY: "ออกเวร", ON_LEAVE: "ลาหยุด" };
-const availabilityTone: Record<string, string> = { ON_DUTY: "bg-emerald-400/15 text-emerald-200 ring-emerald-300/25", OFF_DUTY: "bg-slate-400/15 text-slate-300 ring-slate-300/20", ON_LEAVE: "bg-rose-400/15 text-rose-200 ring-rose-300/25" };
+const availabilityTone: Record<string, string> = { ON_DUTY: "bg-emerald-100 text-emerald-800 ring-emerald-200", OFF_DUTY: "bg-slate-100 text-slate-700 ring-slate-200", ON_LEAVE: "bg-rose-100 text-rose-800 ring-rose-200" };
 
 function formatDate(value: unknown, full = false) {
   return value ? new Date(value as string).toLocaleString("th-TH", full ? { dateStyle: "medium", timeStyle: "short" } : { day: "2-digit", month: "short" }) : "—";
