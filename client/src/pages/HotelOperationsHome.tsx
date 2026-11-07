@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import {
-  AlertTriangle, Bell, Camera, CheckCircle2, ClipboardList, Clock3, FileDown,
+  AlertTriangle, ArrowUpRight, Bell, Camera, CheckCircle2, ClipboardList, Clock3, FileDown,
   ImagePlus, LayoutDashboard, MapPin, Menu, PackageOpen, Plus, Search,
   Settings2, ShieldCheck, Users2, Wrench, X,
 } from "lucide-react";
