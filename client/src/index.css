@@ -181,3 +181,161 @@ input::placeholder, textarea::placeholder { color: #8e9abb !important; }
   button, a, input, select, textarea { transition: color 160ms ease, background-color 160ms ease, border-color 160ms ease, transform 160ms ease, box-shadow 160ms ease; }
   button:active { transform: scale(0.98); }
 }
+
+/* Track-inspired product system: consistent across dashboard, work orders, inventory,
+   technician views, settings, authentication and every dialog. */
+:root {
+  --ops-surface: #111831;
+  --ops-surface-raised: #17213d;
+  --ops-surface-soft: #1c2948;
+  --ops-border: rgb(148 163 224 / 0.18);
+  --ops-border-strong: rgb(148 163 224 / 0.3);
+  --ops-accent: #818cf8;
+  --ops-accent-strong: #6366f1;
+}
+body {
+  background-attachment: fixed;
+  letter-spacing: -0.012em;
+  -webkit-font-smoothing: antialiased;
+}
+#root { min-height: 100vh; }
+.hotel-ops-app { min-height: 100vh; color: #e8ecff; }
+.hotel-ops-app main { min-width: 0; }
+.hotel-ops-app main > div,
+.hotel-ops-app main > section { min-width: 0; }
+
+/* Cards and panels use a quiet, layered surface rather than competing gradients. */
+.hotel-ops-app [data-slot="card"],
+.hotel-ops-app [data-slot="card-content"],
+.hotel-ops-app [data-slot="card-header"] {
+  min-width: 0;
+}
+.hotel-ops-app [data-slot="card"] {
+  border-color: var(--ops-border) !important;
+  background-color: rgb(17 24 49 / 0.88);
+  box-shadow: 0 1px 0 rgb(255 255 255 / 0.035) inset, 0 16px 40px rgb(2 6 23 / 0.16) !important;
+  backdrop-filter: blur(14px);
+}
+.hotel-ops-app [data-slot="card"]:hover {
+  border-color: var(--ops-border-strong) !important;
+}
+.hotel-ops-app [data-slot="card-title"] { color: #f1f3ff; }
+.hotel-ops-app [data-slot="card-description"] { color: #aab6d4; }
+
+/* Navigation and page header. */
+.hotel-ops-app aside { backdrop-filter: blur(18px); }
+.hotel-ops-app nav a,
+.hotel-ops-app nav button,
+.hotel-ops-app aside a,
+.hotel-ops-app aside button {
+  border-radius: 0.8rem;
+}
+.hotel-ops-app nav a:hover,
+.hotel-ops-app nav button:hover,
+.hotel-ops-app aside a:hover,
+.hotel-ops-app aside button:hover {
+  background-color: rgb(129 140 248 / 0.1);
+}
+.hotel-ops-app main > header {
+  backdrop-filter: blur(18px);
+}
+.hotel-ops-app h1 { font-size: clamp(1.35rem, 2vw, 1.85rem); line-height: 1.2; }
+.hotel-ops-app h2 { line-height: 1.25; }
+.hotel-ops-app p { text-wrap: pretty; }
+
+/* Inputs, select controls and buttons share the same focus and interaction language. */
+.hotel-ops-app input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+.hotel-ops-app textarea,
+.hotel-ops-app select,
+[role="dialog"] input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+[role="dialog"] textarea,
+[role="dialog"] select {
+  border-color: var(--ops-border-strong);
+  background-color: #0d1530;
+  color: #eef1ff;
+  border-radius: 0.75rem;
+}
+.hotel-ops-app input:focus,
+.hotel-ops-app textarea:focus,
+.hotel-ops-app select:focus,
+[role="dialog"] input:focus,
+[role="dialog"] textarea:focus,
+[role="dialog"] select:focus {
+  outline: 2px solid rgb(129 140 248 / 0.45);
+  outline-offset: 1px;
+}
+.hotel-ops-app button[data-slot="button"],
+[role="dialog"] button[data-slot="button"] {
+  border-radius: 0.75rem;
+  font-weight: 600;
+}
+.hotel-ops-app button[data-slot="button"]:not(:disabled):hover,
+[role="dialog"] button[data-slot="button"]:not(:disabled):hover {
+  filter: brightness(1.08);
+}
+.hotel-ops-app button:focus-visible,
+.hotel-ops-app a:focus-visible,
+[role="dialog"] button:focus-visible {
+  outline: 2px solid #a5b4fc;
+  outline-offset: 3px;
+}
+
+/* Data tables and list rows remain readable at every viewport width. */
+.hotel-ops-app table { border-collapse: separate; border-spacing: 0; }
+.hotel-ops-app table th {
+  color: #b9c5e6;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.045em;
+  text-transform: uppercase;
+}
+.hotel-ops-app table td { border-color: rgb(148 163 224 / 0.12); }
+.hotel-ops-app table tbody tr { transition: background-color 150ms ease; }
+.hotel-ops-app [class*="divide-y"] > * + * { border-color: rgb(148 163 224 / 0.14); }
+
+/* Dialogs, dropdowns, popovers and notifications. */
+[role="dialog"] {
+  border: 1px solid var(--ops-border-strong) !important;
+  background: #111a35 !important;
+  color: #e8ecff !important;
+  box-shadow: 0 28px 90px rgb(0 0 0 / 0.48) !important;
+}
+[role="dialog"] [data-slot="dialog-description"] { color: #aab6d4; }
+[data-radix-popper-content-wrapper] [role="menu"],
+[data-radix-popper-content-wrapper] [role="listbox"],
+[data-radix-popper-content-wrapper] [data-slot="popover-content"] {
+  border-color: var(--ops-border-strong);
+  background: #17213d;
+  color: #edf0ff;
+}
+.hotel-ops-app [data-sonner-toaster] { font-family: 'DM Sans', sans-serif; }
+
+/* Status labels preserve their semantic colors while gaining consistent shape. */
+.hotel-ops-app [class*="rounded-full"][class*="font-bold"],
+.hotel-ops-app [class*="rounded-full"][class*="font-semibold"] {
+  letter-spacing: 0.005em;
+}
+
+/* Auth and first-run screens follow the same product identity. */
+.hotel-ops-app a[href*="/api/auth/line/start"] {
+  border-radius: 0.85rem;
+  box-shadow: 0 12px 28px rgb(6 199 85 / 0.16);
+}
+.hotel-ops-app main[class*="max-w-md"] {
+  border-color: var(--ops-border-strong);
+  background: rgb(17 24 49 / 0.94);
+  box-shadow: 0 30px 90px rgb(0 0 0 / 0.38);
+  backdrop-filter: blur(18px);
+}
+
+/* Mobile: avoid horizontal overflow and keep touch targets comfortable. */
+@media (max-width: 767px) {
+  .hotel-ops-app main { overflow-x: clip; }
+  .hotel-ops-app table { min-width: 100%; }
+  .hotel-ops-app [data-slot="card"] { border-radius: 1rem; }
+  .hotel-ops-app button[data-slot="button"] { min-height: 2.5rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { scroll-behavior: auto !important; transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; }
+}
+
