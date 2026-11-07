@@ -339,3 +339,36 @@ body {
   *, *::before, *::after { scroll-behavior: auto !important; transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; }
 }
 
+
+/* Track-inspired application shell: real workspace layout and responsive navigation. */
+.ops-workspace {
+  --ops-sidebar: #0b1124;
+  --ops-panel: #111a33;
+  background:
+    radial-gradient(ellipse at 82% -12%, rgb(99 102 241 / .14), transparent 34rem),
+    radial-gradient(ellipse at 4% 92%, rgb(124 58 237 / .08), transparent 30rem),
+    #090d1b;
+}
+.ops-sidebar {
+  background: linear-gradient(180deg, #0d142b 0%, #0a1021 100%);
+  box-shadow: 18px 0 50px rgb(0 0 0 / .16);
+}
+.ops-topbar {
+  background: rgb(9 13 27 / .82);
+  backdrop-filter: blur(20px);
+}
+.ops-stat-card {
+  position: relative;
+  transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
+}
+.ops-stat-card:hover {
+  transform: translateY(-2px);
+  border-color: rgb(129 140 248 / .32) !important;
+  box-shadow: 0 16px 38px rgb(2 6 23 / .28) !important;
+}
+.ops-workspace main > div > div > h2 { letter-spacing: -.035em; }
+.ops-workspace [data-slot="card"] { border-radius: 1rem; }
+@media (max-width: 639px) {
+  .ops-workspace main { padding-bottom: 2rem; }
+  .ops-topbar { min-height: 68px; }
+}
