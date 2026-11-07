@@ -6,37 +6,54 @@
 
 :root {
   font-family: 'DM Sans', ui-sans-serif, system-ui, sans-serif;
-  color: #e7eaf6;
-  background: #090d1d;
+  color-scheme: dark;
+  color: #f4f4f5;
+  background: #09090b;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
-  --radius: 0.85rem;
-  --background: #090d1d;
-  --foreground: #e7eaf6;
-  --card: #131a33;
-  --card-foreground: #e7eaf6;
-  --popover: #171f3d;
-  --popover-foreground: #f4f6ff;
-  --primary: #818cf8;
-  --primary-foreground: #090d1d;
-  --secondary: #1d2749;
-  --secondary-foreground: #dce4ff;
-  --muted: #202a4c;
-  --muted-foreground: #aab5d2;
-  --accent: #293663;
-  --accent-foreground: #eef1ff;
-  --destructive: #fb7185;
-  --border: #2b375f;
-  --input: #34416d;
-  --ring: #a5b4fc;
+  --radius: 0.65rem;
+  --background: #09090b;
+  --foreground: #f4f4f5;
+  --card: #111113;
+  --card-foreground: #f4f4f5;
+  --popover: #111113;
+  --popover-foreground: #f4f4f5;
+  --primary: #fafafa;
+  --primary-foreground: #09090b;
+  --secondary: #202023;
+  --secondary-foreground: #e4e4e7;
+  --muted: #18181b;
+  --muted-foreground: #a1a1aa;
+  --accent: #27272a;
+  --accent-foreground: #fafafa;
+  --destructive: #ef4444;
+  --border: #29292d;
+  --input: #303036;
+  --ring: #a1a1aa;
+  --ops-surface: #111113;
+  --ops-surface-raised: #17171a;
+  --ops-surface-soft: #202023;
+  --ops-border: #29292d;
+  --ops-border-strong: #3f3f46;
+  --ops-accent: #e4e4e7;
+  --ops-accent-strong: #fafafa;
 }
 
 * { border-color: var(--border); }
-html { background: #090d1d; }
-body { margin: 0; min-width: 320px; min-height: 100vh; background: radial-gradient(circle at 10% 0%, #222c59 0, transparent 32rem), radial-gradient(circle at 96% 100%, #241b4a 0, transparent 36rem), #090d1d; }
+html { min-width: 320px; background: #09090b; }
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  background: #09090b;
+  color: #f4f4f5;
+  letter-spacing: -0.012em;
+  -webkit-font-smoothing: antialiased;
+}
 button, input, textarea, select { font: inherit; }
 button { cursor: pointer; }
-::selection { background: #6366f1; color: #ffffff; }
+::selection { background: #52525b; color: #fff; }
+#root { min-height: 100vh; }
 
 @theme inline {
   --color-background: var(--background);
@@ -57,10 +74,10 @@ button { cursor: pointer; }
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
-  --radius-sm: calc(var(--radius) - 0.35rem);
-  --radius-md: calc(var(--radius) - 0.15rem);
+  --radius-sm: calc(var(--radius) - 0.25rem);
+  --radius-md: calc(var(--radius) - 0.1rem);
   --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 0.35rem);
+  --radius-xl: calc(var(--radius) + 0.25rem);
 }
 
 @layer base {
@@ -69,306 +86,215 @@ button { cursor: pointer; }
   h1, h2, h3, h4 { font-family: 'Manrope', 'DM Sans', sans-serif; }
 }
 
-/* Legacy utilities are intentionally remapped so the operational UI keeps one dark visual system. */
-.bg-white, .bg-white\/75, .bg-white\/80, .bg-white\/85, .bg-white\/90 { background-color: #131a33 !important; }
-.bg-slate-50, .bg-slate-50\/50, .bg-slate-50\/60, .bg-slate-50\/70, .bg-slate-50\/80 { background-color: #1a2342 !important; }
-.bg-slate-100 { background-color: #232e53 !important; }
-.border-slate-100, .border-slate-200, .border-slate-200\/70, .border-slate-200\/80 { border-color: #2b375f !important; }
-.text-slate-950, .text-slate-900, .text-slate-800, .text-slate-700 { color: #edf0ff !important; }
-.text-slate-600, .text-slate-500 { color: #c0c9e4 !important; }
-.text-slate-400, .text-slate-300 { color: #98a5c7 !important; }
-.bg-teal-50, .bg-teal-50\/50, .bg-teal-50\/70, .bg-teal-50\/80, .bg-teal-50\/40 { background-color: #242554 !important; }
-.border-teal-100, .border-teal-200, .border-teal-300 { border-color: #4f46a5 !important; }
-.text-teal-800, .text-teal-700, .text-teal-600, .text-teal-300 { color: #b7c3ff !important; }
-.bg-teal-100 { background-color: #30316b !important; }
-.bg-teal-400, .bg-teal-500, .bg-teal-600, .bg-teal-700, .bg-teal-800, .bg-emerald-600, .bg-emerald-700 { background-color: #4f46e5 !important; }
-.hover\:bg-teal-500:hover, .hover\:bg-teal-600:hover, .hover\:bg-teal-700:hover, .hover\:bg-emerald-600:hover { background-color: #4338ca !important; }
-.hover\:bg-teal-50:hover, .hover\:bg-teal-50\/50:hover, .hover\:bg-slate-50:hover { background-color: #27315b !important; }
-.focus\:border-teal-500:focus { border-color: #a5b4fc !important; }
-.from-teal-400, .from-teal-700 { --tw-gradient-from: #4f46e5 var(--tw-gradient-from-position) !important; --tw-gradient-to: rgb(79 70 229 / 0) var(--tw-gradient-to-position) !important; }
-.to-cyan-500, .to-cyan-700, .to-cyan-800 { --tw-gradient-to: #7c3aed var(--tw-gradient-to-position) !important; }
-.from-cyan-700 { --tw-gradient-from: #3730a3 var(--tw-gradient-from-position) !important; --tw-gradient-to: rgb(55 48 163 / 0) var(--tw-gradient-to-position) !important; }
+/* Legacy utility bridge: preserve existing screens while applying Track's neutral palette. */
+.bg-white, .bg-white\/75, .bg-white\/80, .bg-white\/85, .bg-white\/90 { background-color: #111113 !important; }
+.bg-slate-50, .bg-slate-50\/50, .bg-slate-50\/60, .bg-slate-50\/70, .bg-slate-50\/80 { background-color: #151518 !important; }
+.bg-slate-100 { background-color: #202023 !important; }
+.bg-slate-200 { background-color: #29292d !important; }
+.border-slate-100, .border-slate-200, .border-slate-200\/70, .border-slate-200\/80 { border-color: #29292d !important; }
+.text-slate-950, .text-slate-900, .text-slate-800, .text-slate-700 { color: #f4f4f5 !important; }
+.text-slate-600, .text-slate-500 { color: #a1a1aa !important; }
+.text-slate-400, .text-slate-300 { color: #a1a1aa !important; }
+.bg-teal-50, .bg-teal-50\/50, .bg-teal-50\/70, .bg-teal-50\/80, .bg-teal-50\/40 { background-color: #17201c !important; }
+.border-teal-100, .border-teal-200, .border-teal-300 { border-color: #294238 !important; }
+.text-teal-800, .text-teal-700, .text-teal-600, .text-teal-300 { color: #86efac !important; }
+.bg-teal-100 { background-color: #183126 !important; }
+.bg-teal-400, .bg-teal-500, .bg-teal-600, .bg-teal-700, .bg-teal-800 { background-color: #16a34a !important; }
+.hover\:bg-teal-500:hover, .hover\:bg-teal-600:hover, .hover\:bg-teal-700:hover { background-color: #15803d !important; }
+.hover\:bg-teal-50:hover, .hover\:bg-teal-50\/50:hover, .hover\:bg-slate-50:hover { background-color: #27272a !important; }
+.focus\:border-teal-500:focus { border-color: #a1a1aa !important; }
+.from-teal-400, .from-teal-700 { --tw-gradient-from: #27272a var(--tw-gradient-from-position) !important; --tw-gradient-to: rgb(39 39 42 / 0) var(--tw-gradient-to-position) !important; }
+.to-cyan-500, .to-cyan-700, .to-cyan-800 { --tw-gradient-to: #52525b var(--tw-gradient-to-position) !important; }
+.from-cyan-700 { --tw-gradient-from: #27272a var(--tw-gradient-from-position) !important; --tw-gradient-to: rgb(39 39 42 / 0) var(--tw-gradient-to-position) !important; }
 
-/* Shell backgrounds that were declared as arbitrary teal gradients in the initial prototype. */
-.min-h-screen { background: radial-gradient(circle at 8% 0%, rgb(67 56 202 / 0.26), transparent 28rem), radial-gradient(circle at 95% 95%, rgb(124 58 237 / 0.2), transparent 34rem), #090d1d !important; }
-.sticky { background-color: rgb(19 26 51 / 0.94) !important; border-color: #2b375f !important; }
-.border-white\/70, .border-white\/80 { border-color: #394875 !important; }
-.ring-slate-200\/70 { --tw-ring-color: rgb(57 72 117 / 0.8) !important; }
-
-/* Hotel operations command center: operational hierarchy without changing existing workflows. */
+/* Track-inspired application shell: restrained monochrome surfaces and crisp dividers. */
 .hotel-ops-app {
-  --ops-ink: #090d1d;
-  --ops-panel: rgb(19 26 51 / 0.9);
-  --ops-line: rgb(129 140 248 / 0.22);
-  position: relative;
+  min-height: 100vh;
+  color: #f4f4f5;
+  background: #09090b;
   isolation: isolate;
 }
-.hotel-ops-app::before {
-  content: "";
-  position: fixed;
-  z-index: -1;
-  inset: 0;
-  pointer-events: none;
-  opacity: 0.48;
-  background-image: linear-gradient(rgb(165 180 252 / 0.045) 1px, transparent 1px), linear-gradient(90deg, rgb(165 180 252 / 0.045) 1px, transparent 1px);
-  background-size: 32px 32px;
-  mask-image: linear-gradient(to bottom, black, transparent 58%);
-}
-.hotel-ops-app > .min-h-screen {
-  background: radial-gradient(circle at 92% 4%, rgb(129 140 248 / 0.22), transparent 25rem), radial-gradient(circle at 12% 80%, rgb(124 58 237 / 0.16), transparent 28rem), #090d1d !important;
-}
+.hotel-ops-app main { min-width: 0; }
+.hotel-ops-app main > div, .hotel-ops-app main > section { min-width: 0; }
 .hotel-ops-app aside {
-  background: linear-gradient(180deg, #0e1430 0%, #090d1d 72%) !important;
-  border-right-color: rgb(129 140 248 / 0.24) !important;
+  background: #0d0d0f !important;
+  border-right: 1px solid #29292d !important;
+  box-shadow: none !important;
 }
 .hotel-ops-app aside > div:first-child::after {
-  content: "Operations command center";
+  content: "ENGINEERING WORKSPACE";
   display: block;
-  margin-top: 0.25rem;
-  margin-left: 3.5rem;
-  color: rgb(165 180 252 / 0.68);
-  font-size: 0.56rem;
+  margin: .3rem 0 0 3.35rem;
+  color: #71717a;
+  font-size: .56rem;
   font-weight: 700;
-  letter-spacing: 0.12em;
+  letter-spacing: .13em;
+}
+.hotel-ops-app main > header {
+  background: rgb(9 9 11 / .92) !important;
+  border-bottom: 1px solid #29292d !important;
+  box-shadow: none !important;
+  backdrop-filter: blur(16px);
+}
+.hotel-ops-app h1 { font-size: clamp(1.35rem, 2vw, 1.85rem); line-height: 1.2; letter-spacing: -.04em; }
+.hotel-ops-app h2, .hotel-ops-app h3 { letter-spacing: -.025em; }
+.hotel-ops-app p { text-wrap: pretty; }
+.hotel-ops-app [data-slot="card"] {
+  min-width: 0;
+  color: #f4f4f5;
+  background: #111113 !important;
+  border: 1px solid #29292d !important;
+  border-radius: .7rem !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+}
+.hotel-ops-app [data-slot="card"]:hover { border-color: #3f3f46 !important; }
+.hotel-ops-app [data-slot="card-title"] { color: #f4f4f5; }
+.hotel-ops-app [data-slot="card-description"] { color: #a1a1aa; }
+.hotel-ops-app nav a, .hotel-ops-app nav button,
+.hotel-ops-app aside a, .hotel-ops-app aside button { border-radius: .45rem; }
+.hotel-ops-app nav a:hover, .hotel-ops-app nav button:hover,
+.hotel-ops-app aside a:hover, .hotel-ops-app aside button:hover { background: #202023 !important; }
+.hotel-ops-app nav a[aria-current="page"],
+.hotel-ops-app aside a[aria-current="page"] { background: #27272a !important; color: #fafafa !important; }
+.hotel-ops-app [class~="shadow-sm"] { box-shadow: none !important; }
+.hotel-ops-app [class*="rounded-2xl"], .hotel-ops-app [class*="rounded-3xl"] { border-color: #29292d; }
+.hotel-ops-app table { width: 100%; border-collapse: separate; border-spacing: 0; }
+.hotel-ops-app table thead { background: #18181b !important; }
+.hotel-ops-app table th {
+  color: #a1a1aa;
+  font-size: .68rem;
+  font-weight: 700;
+  letter-spacing: .07em;
   text-transform: uppercase;
 }
-.hotel-ops-app main > header {
-  box-shadow: 0 1px 0 rgb(129 140 248 / 0.14), 0 10px 32px rgb(3 7 25 / 0.2);
-}
-.hotel-ops-app h1,
-.hotel-ops-app h2,
-.hotel-ops-app h3 {
-  letter-spacing: -0.035em;
-}
-.hotel-ops-app h2 {
-  text-wrap: balance;
-}
-.hotel-ops-app [class~="shadow-sm"] {
-  box-shadow: 0 12px 28px rgb(3 7 25 / 0.18), inset 0 1px 0 rgb(255 255 255 / 0.035) !important;
-}
-.hotel-ops-app [class*="rounded-2xl"],
-.hotel-ops-app [class*="rounded-3xl"] {
-  border-color: var(--ops-line);
-}
-.hotel-ops-app table thead {
-  background-color: rgb(36 47 89 / 0.76) !important;
-}
-.hotel-ops-app table tbody tr:hover {
-  background-color: rgb(79 70 229 / 0.13) !important;
-}
-.hotel-ops-app button[class*="from-teal-700"][class*="to-cyan-700"] {
-  color: #ffffff !important;
-  border: 1px solid rgb(196 181 253 / 0.48);
-  background-image: linear-gradient(110deg, #6366f1 0%, #7c3aed 100%) !important;
-  box-shadow: 0 14px 28px rgb(49 46 129 / 0.48), inset 0 1px 0 rgb(255 255 255 / 0.22) !important;
-}
-.hotel-ops-app button[class*="from-teal-700"][class*="to-cyan-700"]:hover { background-image: linear-gradient(110deg, #818cf8 0%, #8b5cf6 100%) !important; }
-.hotel-ops-app [role="dialog"] {
-  max-block-size: calc(100dvh - 1rem);
-  overscroll-behavior: contain;
-}
-@media (max-width: 1023px) {
-  .hotel-ops-app aside > div:first-child::after { display: none; }
-}
-@media (max-width: 639px) {
-  .hotel-ops-app [role="dialog"] { border-radius: 1.25rem; }
-}
+.hotel-ops-app table td { border-color: #252529; }
+.hotel-ops-app table tbody tr { transition: background-color 140ms ease; }
+.hotel-ops-app table tbody tr:hover { background: #18181b !important; }
+.hotel-ops-app [class*="divide-y"] > * + * { border-color: #29292d; }
 
-input, textarea, select { color-scheme: dark; }
-input::placeholder, textarea::placeholder { color: #8e9abb !important; }
-
-@media (prefers-reduced-motion: no-preference) {
-  button, a, input, select, textarea { transition: color 160ms ease, background-color 160ms ease, border-color 160ms ease, transform 160ms ease, box-shadow 160ms ease; }
-  button:active { transform: scale(0.98); }
-}
-
-/* Track-inspired product system: consistent across dashboard, work orders, inventory,
-   technician views, settings, authentication and every dialog. */
-:root {
-  --ops-surface: #111831;
-  --ops-surface-raised: #17213d;
-  --ops-surface-soft: #1c2948;
-  --ops-border: rgb(148 163 224 / 0.18);
-  --ops-border-strong: rgb(148 163 224 / 0.3);
-  --ops-accent: #818cf8;
-  --ops-accent-strong: #6366f1;
-}
-body {
-  background-attachment: fixed;
-  letter-spacing: -0.012em;
-  -webkit-font-smoothing: antialiased;
-}
-#root { min-height: 100vh; }
-.hotel-ops-app { min-height: 100vh; color: #e8ecff; }
-.hotel-ops-app main { min-width: 0; }
-.hotel-ops-app main > div,
-.hotel-ops-app main > section { min-width: 0; }
-
-/* Cards and panels use a quiet, layered surface rather than competing gradients. */
-.hotel-ops-app [data-slot="card"],
-.hotel-ops-app [data-slot="card-content"],
-.hotel-ops-app [data-slot="card-header"] {
-  min-width: 0;
-}
-.hotel-ops-app [data-slot="card"] {
-  border-color: var(--ops-border) !important;
-  background-color: rgb(17 24 49 / 0.88);
-  box-shadow: 0 1px 0 rgb(255 255 255 / 0.035) inset, 0 16px 40px rgb(2 6 23 / 0.16) !important;
-  backdrop-filter: blur(14px);
-}
-.hotel-ops-app [data-slot="card"]:hover {
-  border-color: var(--ops-border-strong) !important;
-}
-.hotel-ops-app [data-slot="card-title"] { color: #f1f3ff; }
-.hotel-ops-app [data-slot="card-description"] { color: #aab6d4; }
-
-/* Navigation and page header. */
-.hotel-ops-app aside { backdrop-filter: blur(18px); }
-.hotel-ops-app nav a,
-.hotel-ops-app nav button,
-.hotel-ops-app aside a,
-.hotel-ops-app aside button {
-  border-radius: 0.8rem;
-}
-.hotel-ops-app nav a:hover,
-.hotel-ops-app nav button:hover,
-.hotel-ops-app aside a:hover,
-.hotel-ops-app aside button:hover {
-  background-color: rgb(129 140 248 / 0.1);
-}
-.hotel-ops-app main > header {
-  backdrop-filter: blur(18px);
-}
-.hotel-ops-app h1 { font-size: clamp(1.35rem, 2vw, 1.85rem); line-height: 1.2; }
-.hotel-ops-app h2 { line-height: 1.25; }
-.hotel-ops-app p { text-wrap: pretty; }
-
-/* Inputs, select controls and buttons share the same focus and interaction language. */
+/* Form controls and dialogs use the same shadcn-like neutral system. */
 .hotel-ops-app input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
-.hotel-ops-app textarea,
-.hotel-ops-app select,
+.hotel-ops-app textarea, .hotel-ops-app select,
 [role="dialog"] input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
-[role="dialog"] textarea,
-[role="dialog"] select {
-  border-color: var(--ops-border-strong);
-  background-color: #0d1530;
-  color: #eef1ff;
-  border-radius: 0.75rem;
+[role="dialog"] textarea, [role="dialog"] select {
+  color-scheme: dark;
+  color: #f4f4f5;
+  background: #09090b;
+  border: 1px solid #303036;
+  border-radius: .5rem;
 }
-.hotel-ops-app input:focus,
-.hotel-ops-app textarea:focus,
-.hotel-ops-app select:focus,
-[role="dialog"] input:focus,
-[role="dialog"] textarea:focus,
-[role="dialog"] select:focus {
-  outline: 2px solid rgb(129 140 248 / 0.45);
+.hotel-ops-app input::placeholder, .hotel-ops-app textarea::placeholder,
+input::placeholder, textarea::placeholder { color: #71717a !important; }
+.hotel-ops-app input:focus, .hotel-ops-app textarea:focus, .hotel-ops-app select:focus,
+[role="dialog"] input:focus, [role="dialog"] textarea:focus, [role="dialog"] select:focus {
+  outline: 2px solid rgb(161 161 170 / .35);
   outline-offset: 1px;
 }
-.hotel-ops-app button[data-slot="button"],
-[role="dialog"] button[data-slot="button"] {
-  border-radius: 0.75rem;
+.hotel-ops-app button[data-slot="button"], [role="dialog"] button[data-slot="button"] {
+  border-radius: .5rem;
   font-weight: 600;
+  box-shadow: none;
 }
 .hotel-ops-app button[data-slot="button"]:not(:disabled):hover,
-[role="dialog"] button[data-slot="button"]:not(:disabled):hover {
-  filter: brightness(1.08);
+[role="dialog"] button[data-slot="button"]:not(:disabled):hover { filter: brightness(1.12); }
+.hotel-ops-app button:focus-visible, .hotel-ops-app a:focus-visible,
+[role="dialog"] button:focus-visible { outline: 2px solid #a1a1aa; outline-offset: 3px; }
+.hotel-ops-app button[class*="from-teal-700"][class*="to-cyan-700"] {
+  color: #09090b !important;
+  border: 1px solid #fafafa;
+  background: #fafafa !important;
+  background-image: none !important;
+  box-shadow: none !important;
 }
-.hotel-ops-app button:focus-visible,
-.hotel-ops-app a:focus-visible,
-[role="dialog"] button:focus-visible {
-  outline: 2px solid #a5b4fc;
-  outline-offset: 3px;
+.hotel-ops-app button[class*="from-teal-700"][class*="to-cyan-700"]:hover {
+  background: #d4d4d8 !important;
+  background-image: none !important;
 }
-
-/* Data tables and list rows remain readable at every viewport width. */
-.hotel-ops-app table { border-collapse: separate; border-spacing: 0; }
-.hotel-ops-app table th {
-  color: #b9c5e6;
-  font-size: 0.7rem;
-  font-weight: 700;
-  letter-spacing: 0.045em;
-  text-transform: uppercase;
-}
-.hotel-ops-app table td { border-color: rgb(148 163 224 / 0.12); }
-.hotel-ops-app table tbody tr { transition: background-color 150ms ease; }
-.hotel-ops-app [class*="divide-y"] > * + * { border-color: rgb(148 163 224 / 0.14); }
-
-/* Dialogs, dropdowns, popovers and notifications. */
 [role="dialog"] {
-  border: 1px solid var(--ops-border-strong) !important;
-  background: #111a35 !important;
-  color: #e8ecff !important;
-  box-shadow: 0 28px 90px rgb(0 0 0 / 0.48) !important;
+  max-block-size: calc(100dvh - 1rem);
+  overscroll-behavior: contain;
+  color: #f4f4f5 !important;
+  background: #111113 !important;
+  border: 1px solid #3f3f46 !important;
+  border-radius: .75rem !important;
+  box-shadow: 0 24px 80px rgb(0 0 0 / .55) !important;
 }
-[role="dialog"] [data-slot="dialog-description"] { color: #aab6d4; }
+[role="dialog"] [data-slot="dialog-description"] { color: #a1a1aa; }
 [data-radix-popper-content-wrapper] [role="menu"],
 [data-radix-popper-content-wrapper] [role="listbox"],
 [data-radix-popper-content-wrapper] [data-slot="popover-content"] {
-  border-color: var(--ops-border-strong);
-  background: #17213d;
-  color: #edf0ff;
+  color: #f4f4f5;
+  background: #18181b;
+  border-color: #3f3f46;
+  border-radius: .6rem;
 }
 .hotel-ops-app [data-sonner-toaster] { font-family: 'DM Sans', sans-serif; }
-
-/* Status labels preserve their semantic colors while gaining consistent shape. */
 .hotel-ops-app [class*="rounded-full"][class*="font-bold"],
-.hotel-ops-app [class*="rounded-full"][class*="font-semibold"] {
-  letter-spacing: 0.005em;
-}
+.hotel-ops-app [class*="rounded-full"][class*="font-semibold"] { letter-spacing: .005em; }
 
-/* Auth and first-run screens follow the same product identity. */
-.hotel-ops-app a[href*="/api/auth/line/start"] {
-  border-radius: 0.85rem;
-  box-shadow: 0 12px 28px rgb(6 199 85 / 0.16);
-}
+/* Sign-in and registration screens share the same product identity. */
 .hotel-ops-app main[class*="max-w-md"] {
-  border-color: var(--ops-border-strong);
-  background: rgb(17 24 49 / 0.94);
-  box-shadow: 0 30px 90px rgb(0 0 0 / 0.38);
-  backdrop-filter: blur(18px);
+  color: #f4f4f5;
+  background: #111113;
+  border-color: #29292d;
+  box-shadow: 0 24px 80px rgb(0 0 0 / .35);
 }
+.hotel-ops-app a[href*="/api/auth/line/start"] { border-radius: .55rem; }
 
-/* Mobile: avoid horizontal overflow and keep touch targets comfortable. */
-@media (max-width: 767px) {
-  .hotel-ops-app main { overflow-x: clip; }
-  .hotel-ops-app table { min-width: 100%; }
-  .hotel-ops-app [data-slot="card"] { border-radius: 1rem; }
-  .hotel-ops-app button[data-slot="button"] { min-height: 2.5rem; }
-}
-@media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after { scroll-behavior: auto !important; transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; }
-}
-
-
-/* Track-inspired application shell: real workspace layout and responsive navigation. */
+/* New workspace layout. */
 .ops-workspace {
-  --ops-sidebar: #0b1124;
-  --ops-panel: #111a33;
-  background:
-    radial-gradient(ellipse at 82% -12%, rgb(99 102 241 / .14), transparent 34rem),
-    radial-gradient(ellipse at 4% 92%, rgb(124 58 237 / .08), transparent 30rem),
-    #090d1b;
+  min-height: 100vh;
+  color: #f4f4f5;
+  background: #09090b;
 }
 .ops-sidebar {
-  background: linear-gradient(180deg, #0d142b 0%, #0a1021 100%);
-  box-shadow: 18px 0 50px rgb(0 0 0 / .16);
+  background: #0d0d0f;
+  border-right: 1px solid #29292d;
+  box-shadow: none;
 }
 .ops-topbar {
-  background: rgb(9 13 27 / .82);
-  backdrop-filter: blur(20px);
+  background: rgb(9 9 11 / .92);
+  border-bottom: 1px solid #29292d;
+  backdrop-filter: blur(16px);
 }
 .ops-stat-card {
   position: relative;
-  transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
+  border: 1px solid #29292d !important;
+  background: #111113 !important;
+  box-shadow: none !important;
+  transition: border-color 160ms ease, background-color 160ms ease;
 }
-.ops-stat-card:hover {
-  transform: translateY(-2px);
-  border-color: rgb(129 140 248 / .32) !important;
-  box-shadow: 0 16px 38px rgb(2 6 23 / .28) !important;
-}
+.ops-stat-card:hover { border-color: #52525b !important; transform: translateY(-1px); }
 .ops-workspace main > div > div > h2 { letter-spacing: -.035em; }
-.ops-workspace [data-slot="card"] { border-radius: 1rem; }
-@media (max-width: 639px) {
+.ops-workspace [data-slot="card"] { border-radius: .7rem; }
+.ops-workspace input, .ops-workspace textarea, .ops-workspace select { color-scheme: dark; }
+
+@media (max-width: 1023px) {
+  .hotel-ops-app aside > div:first-child::after { display: none; }
+}
+@media (max-width: 767px) {
+  .hotel-ops-app main { overflow-x: clip; }
+  .hotel-ops-app table { min-width: 100%; }
+  .hotel-ops-app [data-slot="card"] { border-radius: .65rem !important; }
+  .hotel-ops-app button[data-slot="button"] { min-height: 2.5rem; }
   .ops-workspace main { padding-bottom: 2rem; }
-  .ops-topbar { min-height: 68px; }
+  .ops-topbar { min-height: 64px; }
+}
+@media (max-width: 639px) {
+  .hotel-ops-app [role="dialog"] { border-radius: .75rem !important; }
+  .hotel-ops-app aside > div:first-child::after { display: none; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  button, a, input, select, textarea {
+    transition: color 150ms ease, background-color 150ms ease, border-color 150ms ease, transform 150ms ease, box-shadow 150ms ease;
+  }
+  button:active { transform: scale(.985); }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    scroll-behavior: auto !important;
+    transition-duration: .01ms !important;
+    animation-duration: .01ms !important;
+  }
 }
