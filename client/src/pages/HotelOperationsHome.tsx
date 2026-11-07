@@ -25,7 +25,7 @@ const statusTone: Record<string, string> = {
   COMPLETED: "bg-emerald-400/15 text-emerald-100 ring-emerald-300/20", CLOSED: "bg-slate-300/10 text-slate-300 ring-slate-300/15",
 };
 const availabilityLabels: Record<string, string> = { ON_DUTY: "เข้าเวร", OFF_DUTY: "ออกเวร", ON_LEAVE: "ลาหยุด" };
-const availabilityTone: Record<string, string> = { ON_DUTY: "bg-emerald-400/15 text-emerald-200 ring-emerald-300/25", OFF_DUTY: "bg-slate-400/15 text-slate-300 ring-slate-300/20", ON_LEAVE: "bg-rose-400/15 text-rose-200 ring-rose-300/25" };
+const availabilityTone: Record<string, string> = { ON_DUTY: "bg-emerald-100 text-emerald-800 ring-emerald-200", OFF_DUTY: "bg-slate-100 text-slate-700 ring-slate-200", ON_LEAVE: "bg-rose-100 text-rose-800 ring-rose-200" };
 
 function formatDate(value: unknown, full = false) {
   return value ? new Date(value as string).toLocaleString("th-TH", full ? { dateStyle: "medium", timeStyle: "short" } : { day: "2-digit", month: "short" }) : "—";
