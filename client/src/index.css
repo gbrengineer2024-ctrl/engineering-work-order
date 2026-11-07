@@ -376,3 +376,65 @@ input::placeholder, textarea::placeholder { color: #94a3b8 !important; }
 .hotel-ops-app a { color: inherit; }
 .hotel-ops-app a[class*="text-white"],
 .hotel-ops-app nav a[aria-current="page"] { color: #1f2937 !important; }
+
+
+/* Final production contrast pass: all actionable buttons use white-on-black. */
+.hotel-ops-app button:not(:disabled),
+.hotel-ops-app [role="button"]:not([aria-disabled="true"]),
+[role="dialog"] button:not(:disabled) {
+  color: #ffffff !important;
+  background-color: #171717 !important;
+  background-image: none !important;
+  border-color: #171717 !important;
+  text-shadow: none !important;
+}
+.hotel-ops-app button:not(:disabled):hover,
+.hotel-ops-app [role="button"]:not([aria-disabled="true"]):hover,
+[role="dialog"] button:not(:disabled):hover {
+  color: #ffffff !important;
+  background-color: #333333 !important;
+  border-color: #333333 !important;
+}
+.hotel-ops-app button:disabled,
+[role="dialog"] button:disabled {
+  color: #6b7280 !important;
+  background: #e5e7eb !important;
+  border-color: #e5e7eb !important;
+  opacity: 1;
+}
+.hotel-ops-app button svg,
+.hotel-ops-app [role="button"] svg,
+[role="dialog"] button svg {
+  color: currentColor !important;
+}
+.hotel-ops-app input,
+.hotel-ops-app textarea,
+.hotel-ops-app select,
+[role="dialog"] input,
+[role="dialog"] textarea,
+[role="dialog"] select {
+  color: #171717 !important;
+  background: #ffffff !important;
+  border-color: #d1d5db !important;
+}
+.hotel-ops-app label,
+.hotel-ops-app th,
+.hotel-ops-app td,
+.hotel-ops-app p,
+.hotel-ops-app h1,
+.hotel-ops-app h2,
+.hotel-ops-app h3,
+.hotel-ops-app h4,
+[role="dialog"] {
+  color: #202633;
+}
+.hotel-ops-app .text-white,
+.hotel-ops-app [class*="text-white/"] {
+  color: #202633 !important;
+}
+/* Restore white labels only on the black button surfaces defined above. */
+.hotel-ops-app button:not(:disabled),
+.hotel-ops-app [role="button"]:not([aria-disabled="true"]),
+[role="dialog"] button:not(:disabled) {
+  color: #ffffff !important;
+}
