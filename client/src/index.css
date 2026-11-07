@@ -304,3 +304,75 @@ input::placeholder, textarea::placeholder { color: #94a3b8 !important; }
     animation-duration: .01ms !important;
   }
 }
+
+/* Contrast correction: readable dark text on light surfaces, black primary actions with white labels. */
+.hotel-ops-app .text-white,
+.hotel-ops-app .text-slate-50,
+.hotel-ops-app .text-gray-50,
+.hotel-ops-app .text-zinc-50 {
+  color: #202633 !important;
+}
+.hotel-ops-app button,
+.hotel-ops-app [role="button"] {
+  color: #202633;
+}
+.hotel-ops-app button[class*="text-white"],
+.hotel-ops-app [role="button"][class*="text-white"],
+.hotel-ops-app button[class*="from-teal-"],
+.hotel-ops-app button[class*="bg-teal-"],
+.hotel-ops-app button[class*="bg-slate-900"],
+.hotel-ops-app button[class*="bg-slate-950"],
+.hotel-ops-app button[class*="bg-gray-900"],
+.hotel-ops-app button[class*="bg-black"] {
+  color: #ffffff !important;
+  background: #171717 !important;
+  background-image: none !important;
+  border-color: #171717 !important;
+}
+.hotel-ops-app button[class*="text-white"]:hover,
+.hotel-ops-app [role="button"][class*="text-white"]:hover,
+.hotel-ops-app button[class*="from-teal-"]:hover,
+.hotel-ops-app button[class*="bg-teal-"]:hover,
+.hotel-ops-app button[class*="bg-slate-900"]:hover,
+.hotel-ops-app button[class*="bg-slate-950"]:hover,
+.hotel-ops-app button[class*="bg-gray-900"]:hover,
+.hotel-ops-app button[class*="bg-black"]:hover {
+  color: #ffffff !important;
+  background: #333333 !important;
+}
+.hotel-ops-app button[data-slot="button"][data-variant="default"],
+.hotel-ops-app button[data-slot="button"]:not([data-variant="outline"]):not([data-variant="ghost"]):not([data-variant="secondary"]):not([data-variant="link"]) {
+  color: #ffffff;
+  background-color: #171717;
+}
+.hotel-ops-app button[data-slot="button"][data-variant="outline"],
+.hotel-ops-app button[data-slot="button"][data-variant="secondary"],
+.hotel-ops-app button[data-slot="button"][data-variant="ghost"] {
+  color: #202633;
+  background-color: #ffffff;
+  border-color: #d1d5db;
+}
+.hotel-ops-app button:disabled {
+  opacity: .55;
+  cursor: not-allowed;
+}
+.hotel-ops-app [data-slot="card"],
+.hotel-ops-app [role="dialog"],
+.hotel-ops-app aside,
+.hotel-ops-app main > header {
+  color: #202633;
+}
+.hotel-ops-app input,
+.hotel-ops-app textarea,
+.hotel-ops-app select {
+  color: #202633 !important;
+  background-color: #ffffff !important;
+}
+.hotel-ops-app input::placeholder,
+.hotel-ops-app textarea::placeholder {
+  color: #6b7280 !important;
+  opacity: 1;
+}
+.hotel-ops-app a { color: inherit; }
+.hotel-ops-app a[class*="text-white"],
+.hotel-ops-app nav a[aria-current="page"] { color: #1f2937 !important; }
