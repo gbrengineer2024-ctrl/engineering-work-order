@@ -357,3 +357,24 @@ input::placeholder, textarea::placeholder { color: #94a3b8 !important; }
 .hotel-ops-app [role="dialog"] [class*="bg-white/"] {
   background-color: #f8fafc !important;
 }
+
+/* Apply the prepared light theme to the actual dashboard root and legacy dark utilities. */
+.hotel-ops-app :is(h1,h2,h3,h4,p,span,strong,label,small).text-white {
+  color: #202633 !important;
+}
+.hotel-ops-app aside .text-white { color: #202633 !important; }
+.hotel-ops-app main [class*="bg-[#111a33]"],
+.hotel-ops-app main [class*="bg-slate-950"] {
+  background: #ffffff !important;
+  border-color: #e5eaf1 !important;
+}
+.hotel-ops-app main [class*="border-white"] {
+  border-color: #e5eaf1 !important;
+}
+.hotel-ops-app main [class*="text-indigo-"] {
+  color: #475569 !important;
+}
+.hotel-ops-app main [class*="bg-indigo-"] {
+  background-color: #f1f5f9 !important;
+}
+
