@@ -118,7 +118,7 @@ export default function HotelOperationsHome({ onCreateWorkOrder = () => undefine
     users: "จัดการบัญชีและสิทธิ์การใช้งาน",
     settings: "การเชื่อมต่อและการตั้งค่าระบบ",
   };
-  return <div className="ops-workspace min-h-screen text-slate-100">
+  return <div className="hotel-ops-app ops-workspace min-h-screen text-slate-900">
     {menuOpen && <button aria-label="ปิดเมนู" className="fixed inset-0 z-40 bg-slate-950/70 backdrop-blur-sm lg:hidden" onClick={() => setMenuOpen(false)} />}
     <aside className={cn("ops-sidebar fixed inset-y-0 left-0 z-50 flex w-[278px] flex-col border-r border-white/10 px-4 py-5 transition-transform duration-300 lg:translate-x-0", menuOpen ? "translate-x-0" : "-translate-x-full")}>
       <div className="flex items-center gap-3 px-2">
