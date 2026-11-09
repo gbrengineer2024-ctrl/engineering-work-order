@@ -148,7 +148,7 @@ export async function syncTechnicianFromMaintenanceProfile(profile: NonNullable<
   } });
 }
 
-export async function listWorkOrders(filters: { status?: string; priority?: string; category?: string; location?: string; from?: Date; to?: Date; search?: string; requesterUserId?: string; assignedTechId?: string }) {
+export async function listWorkOrders(filters: { status?: string; priority?: string; category?: string; location?: string; from?: Date; to?: Date; search?: string; requesterUserId?: string; requesterDepartment?: string; assignedTechId?: string }) {
   const db = await getDb();
   if (!db) return [];
   const conditions = [];
@@ -160,6 +160,7 @@ export async function listWorkOrders(filters: { status?: string; priority?: stri
   if (filters.to) conditions.push(lte(workOrders.createdAt, filters.to));
   if (filters.search) conditions.push(or(like(workOrders.woId, `%${filters.search}%`), like(workOrders.description, `%${filters.search}%`)));
   if (filters.requesterUserId) conditions.push(eq(workOrders.requesterUserId, filters.requesterUserId));
+  if (filters.requesterDepartment) conditions.push(sql`exists (select 1 from maintenance_users mu where mu.userId = ${workOrders.requesterUserId} and mu.department = ${filters.requesterDepartment})`);
   if (filters.assignedTechId) conditions.push(eq(workOrders.assignedTechId, filters.assignedTechId));
   return db.select().from(workOrders).where(conditions.length ? and(...conditions) : undefined).orderBy(desc(workOrders.createdAt));
 }
@@ -405,16 +406,9 @@ export async function listPartIssues(filters: { woId?: string; status?: string }
 export function inventoryAfterApproval(stock: { currentStockQty: number; reservedQty: number; availableQty: number }, qtyApproved: number) {
   if (qtyApproved <= 0) throw new Error("QTY_MUST_BE_POSITIVE");
   if (qtyApproved > stock.availableQty) throw new Error("INSUFFICIENT_STOCK");
-  const reservedQty = stock.reservedQty + qtyApproved;
-  return { currentStockQty: stock.currentStockQty, reservedQty, availableQty: stock.currentStockQty - reservedQty };
-}
-
-export function inventoryAfterIssuance(stock: { currentStockQty: number; reservedQty: number }, qtyApproved: number, qtyIssued: number) {
-  if (qtyIssued <= 0 || qtyIssued > qtyApproved) throw new Error("INVALID_ISSUE_QTY");
-  if (stock.reservedQty < qtyApproved || stock.currentStockQty < qtyIssued) throw new Error("INSUFFICIENT_STOCK");
-  const currentStockQty = stock.currentStockQty - qtyIssued;
-  const reservedQty = stock.reservedQty - qtyApproved;
-  return { currentStockQty, reservedQty, availableQty: currentStockQty - reservedQty };
+  // Approval is the single stock-deduction point. Do not reserve or deduct again at issuance.
+  const currentStockQty = stock.currentStockQty - qtyApproved;
+  return { currentStockQty, reservedQty: stock.reservedQty, availableQty: currentStockQty - stock.reservedQty };
 }
 
 export async function createPart(input: typeof parts.$inferInsert) {
@@ -506,74 +500,13 @@ export async function approvePartIssue(input: { issueId: string; qtyApproved: nu
   return { issueId: input.issueId, issueStatus: "APPROVED" as const };
 }
 
-export async function issueConsumablePart(input: { issueId: string; qtyIssued: number; issuedByUserId: string }) {
-  const db = await getDb();
-  if (!db) throw new Error("Database unavailable");
-  const [issue] = await db.select().from(partIssues).where(eq(partIssues.issueId, input.issueId)).limit(1);
-  if (!issue) throw new Error("PART_ISSUE_NOT_FOUND");
-  if (issue.issueStatus !== "REQUESTED") throw new Error("PART_ISSUE_NOT_REQUESTED");
-  if (input.qtyIssued <= 0 || input.qtyIssued > issue.qtyRequested) throw new Error("INVALID_ISSUE_QTY");
-  const [part] = await db.select().from(parts).where(eq(parts.partId, issue.partId)).limit(1);
-  if (!part || !part.isActive) throw new Error("PART_NOT_FOUND");
-  if (!/(CONSUMABLE|DISPOSABLE|SUPPLY|วัสดุสิ้นเปลือง)/i.test(part.categoryCode)) throw new Error("PART_IS_NOT_CONSUMABLE");
-  if (input.qtyIssued > part.availableQty) throw new Error("INSUFFICIENT_STOCK");
-  const now = new Date();
-  const currentStockQty = part.currentStockQty - input.qtyIssued;
-  const issueCostThb = String(Number(issue.unitCostThb) * input.qtyIssued);
-  await db.batch([
-    db.update(parts).set({ currentStockQty, availableQty: currentStockQty - part.reservedQty, updatedAt: now }).where(and(
-      eq(parts.partId, part.partId),
-      eq(parts.currentStockQty, part.currentStockQty),
-      eq(parts.reservedQty, part.reservedQty),
-      eq(parts.availableQty, part.availableQty),
-      sql`EXISTS (SELECT 1 FROM ${partIssues} WHERE ${partIssues.issueId} = ${input.issueId} AND ${partIssues.issueStatus} = 'REQUESTED')`,
-    )),
-    db.update(partIssues).set({ qtyApproved: input.qtyIssued, qtyIssued: input.qtyIssued, issueCostThb, approvedByUserId: input.issuedByUserId, approvedAt: now, issueStatus: "ISSUED", issueAt: now, updatedAt: now }).where(and(
-      eq(partIssues.issueId, input.issueId),
-      eq(partIssues.issueStatus, "REQUESTED"),
-      eq(partIssues.qtyRequested, issue.qtyRequested),
-      sql`changes() > 0`,
-    )),
-  ]);
-  const [updatedIssue] = await db.select().from(partIssues).where(eq(partIssues.issueId, input.issueId)).limit(1);
-  if (updatedIssue?.issueStatus !== "ISSUED" || updatedIssue.qtyIssued !== input.qtyIssued) throw new Error("PART_ISSUE_CONCURRENT_UPDATE");
-  return { issueId: input.issueId, issueStatus: "ISSUED" as const };
+export async function issueConsumablePart(_input: { issueId: string; qtyIssued: number; issuedByUserId: string }) {
+  // Consumable requests must use the same approval flow; direct issuance is disabled.
+  throw new Error("SEPARATE_ISSUE_STEP_DISABLED");
 }
-
-export async function issuePart(input: { issueId: string; qtyIssued: number }) {
-  const db = await getDb();
-  if (!db) throw new Error("Database unavailable");
-
-  const [issue] = await db.select().from(partIssues).where(eq(partIssues.issueId, input.issueId)).limit(1);
-  if (!issue) throw new Error("PART_ISSUE_NOT_FOUND");
-  if (issue.issueStatus !== "APPROVED") throw new Error("PART_ISSUE_NOT_APPROVED");
-  const [part] = await db.select().from(parts).where(eq(parts.partId, issue.partId)).limit(1);
-  if (!part) throw new Error("PART_NOT_FOUND");
-
-  const inventory = inventoryAfterIssuance(part, issue.qtyApproved, input.qtyIssued);
-  const now = new Date();
-  const issueCostThb = String(Number(issue.unitCostThb) * input.qtyIssued);
-  await db.batch([
-    db.update(parts).set({ ...inventory, updatedAt: now }).where(and(
-      eq(parts.partId, part.partId),
-      eq(parts.currentStockQty, part.currentStockQty),
-      eq(parts.reservedQty, part.reservedQty),
-      eq(parts.availableQty, part.availableQty),
-      sql`EXISTS (SELECT 1 FROM ${partIssues} WHERE ${partIssues.issueId} = ${input.issueId} AND ${partIssues.issueStatus} = 'APPROVED')`,
-    )),
-    db.update(partIssues).set({ qtyIssued: input.qtyIssued, issueCostThb, issueStatus: "ISSUED", issueAt: now, updatedAt: now }).where(and(
-      eq(partIssues.issueId, input.issueId),
-      eq(partIssues.issueStatus, "APPROVED"),
-      eq(partIssues.qtyApproved, issue.qtyApproved),
-      sql`changes() > 0`,
-    )),
-  ]);
-
-  const [updatedIssue] = await db.select().from(partIssues).where(eq(partIssues.issueId, input.issueId)).limit(1);
-  if (updatedIssue?.issueStatus !== "ISSUED" || updatedIssue.qtyIssued !== input.qtyIssued) {
-    throw new Error("PART_ISSUE_CONCURRENT_UPDATE");
-  }
-  return { issueId: input.issueId, issueStatus: "ISSUED" as const };
+export async function issuePart(_input: { issueId: string; qtyIssued: number }) {
+  // Stock is deducted once when the request is approved. A second issuance step is disabled.
+  throw new Error("SEPARATE_ISSUE_STEP_DISABLED");
 }
 
 export async function listLocations() { const db = await getDb(); return db ? db.select().from(locations).orderBy(locations.areaName) : []; }
