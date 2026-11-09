@@ -51,7 +51,10 @@ async function assertWorkOrderAccess(user: { openId: string; role?: string }, wo
   if (!detail) throw new Error("WORK_ORDER_NOT_FOUND");
   const order = detail.workOrder;
   if (hasRole(user, ["ADMIN", "SUPERVISOR"])) return detail;
-  if (user.role === "REPORTER" && order.requesterUserId === user.openId) return detail;
+  if (user.role === "REPORTER") {
+    const profile = await getMaintenanceProfile(user.openId);
+    if (profile?.department && detail.requester?.department === profile.department) return detail;
+  }
   if (user.role === "TECHNICIAN" && order.assignedTechId === await getTechnicianIdForUser(user.openId)) return detail;
   throw new Error("FORBIDDEN");
 }
@@ -96,7 +99,11 @@ export const appRouter = router({
   workOrders: router({
     list: protectedProcedure.input(z.object({ status: z.string().optional(), priority: z.string().optional(), category: z.string().optional(), location: z.string().optional(), from: dateInput, to: dateInput, search: z.string().optional() }).optional()).query(async ({ input, ctx }) => {
       const filters = { ...(input ?? {}) };
-      if (ctx.user.role === "REPORTER") return listWorkOrders({ ...filters, requesterUserId: ctx.user.openId });
+      if (ctx.user.role === "REPORTER") {
+        const profile = await getMaintenanceProfile(ctx.user.openId);
+        if (!profile?.department?.trim()) return [];
+        return listWorkOrders({ ...filters, requesterDepartment: profile.department.trim() });
+      }
       if (ctx.user.role === "TECHNICIAN") {
         const techId = await getTechnicianIdForUser(ctx.user.openId);
         return techId ? listWorkOrders({ ...filters, assignedTechId: techId }) : [];
@@ -175,7 +182,10 @@ export const appRouter = router({
   }),
   lookups: router({ list: publicProcedure.input(z.object({ type: z.string().optional() }).optional()).query(({ input }) => listLookups(input?.type)) }),
   parts: router({
-    list: protectedProcedure.input(z.object({ search: z.string().optional(), category: z.string().optional(), lowStockOnly: z.boolean().optional() }).optional()).query(({ input }) => listParts(input ?? {})),
+    list: protectedProcedure.input(z.object({ search: z.string().optional(), category: z.string().optional(), lowStockOnly: z.boolean().optional() }).optional()).query(({ input, ctx }) => {
+      if (ctx.user.role === "REPORTER") throw new Error("FORBIDDEN");
+      return listParts(input ?? {});
+    }),
     create: protectedProcedure.input(z.object({ partCode: z.string().trim().min(1).max(80), partNameTh: z.string().trim().min(1).max(200), partNameEn: z.string().trim().max(200).nullable().optional(), categoryCode: z.string().trim().min(1).max(60), unit: z.string().trim().min(1).max(20), brandModel: z.string().trim().max(200).nullable().optional(), supplierName: z.string().trim().max(200).nullable().optional(), storageLocation: z.string().trim().max(80).nullable().optional(), minStockQty: z.coerce.number().int().min(0).default(0), currentStockQty: z.coerce.number().int().min(0).default(0), reservedQty: z.coerce.number().int().min(0).default(0), unitCostThb: z.coerce.number().min(0).default(0), reorderLeadDays: z.coerce.number().int().min(0).default(0), notes: z.string().trim().max(2000).nullable().optional() })).mutation(({ input, ctx }) => {
       if (!canManage(ctx.user)) throw new Error("FORBIDDEN");
       if (input.reservedQty > input.currentStockQty) throw new Error("RESERVED_QTY_EXCEEDS_STOCK");
@@ -185,18 +195,20 @@ export const appRouter = router({
   }),
   partIssues: router({
     list: protectedProcedure.input(z.object({ woId: z.string().optional(), status: z.string().optional() }).optional()).query(async ({ input, ctx }) => {
+      if (ctx.user.role === "REPORTER") throw new Error("FORBIDDEN");
       if (input?.woId) await assertWorkOrderAccess(ctx.user, input.woId);
       else if (!canManage(ctx.user)) throw new Error("WO_ID_REQUIRED");
       return listPartIssues(input ?? {});
     }),
     request: protectedProcedure.input(z.object({ woId: z.string().min(1), partId: z.string().min(1), qtyRequested: z.coerce.number().int().positive(), notes: z.string().trim().max(2000).nullable().optional() })).mutation(async ({ input, ctx }) => {
-      if (!canCreate(ctx.user)) throw new Error("FORBIDDEN");
+      if (ctx.user.role === "REPORTER" || !["ADMIN", "SUPERVISOR", "TECHNICIAN"].includes(ctx.user.role ?? "")) throw new Error("FORBIDDEN");
+      if (!input.notes?.trim()) throw new Error("PART_REQUEST_NOTE_REQUIRED");
       await assertWorkOrderAccess(ctx.user, input.woId);
-      return requestPartIssue({ ...input, requestedByUserId: ctx.user.openId });
+      return requestPartIssue({ ...input, notes: input.notes.trim(), requestedByUserId: ctx.user.openId });
     }),
     approve: protectedProcedure.input(z.object({ issueId: z.string().min(1), qtyApproved: z.coerce.number().int().positive() })).mutation(({ input, ctx }) => canManage(ctx.user) ? approvePartIssue({ ...input, approvedByUserId: ctx.user.openId }) : Promise.reject(new Error("FORBIDDEN"))),
-    issue: protectedProcedure.input(z.object({ issueId: z.string().min(1), qtyIssued: z.coerce.number().int().positive() })).mutation(({ input, ctx }) => canManage(ctx.user) ? issuePart(input) : Promise.reject(new Error("FORBIDDEN"))),
-    issueConsumable: protectedProcedure.input(z.object({ issueId: z.string().min(1), qtyIssued: z.coerce.number().int().positive() })).mutation(({ input, ctx }) => canManage(ctx.user) ? issueConsumablePart({ ...input, issuedByUserId: auditActor(ctx.user) }) : Promise.reject(new Error("FORBIDDEN"))),
+    issue: protectedProcedure.input(z.object({ issueId: z.string().min(1), qtyIssued: z.coerce.number().int().positive() })).mutation(({ input, ctx }) => { if (!canManage(ctx.user)) throw new Error("FORBIDDEN"); throw new Error("SEPARATE_ISSUE_STEP_DISABLED"); }),
+    issueConsumable: protectedProcedure.input(z.object({ issueId: z.string().min(1), qtyIssued: z.coerce.number().int().positive() })).mutation(({ input, ctx }) => { if (!canManage(ctx.user)) throw new Error("FORBIDDEN"); throw new Error("SEPARATE_ISSUE_STEP_DISABLED"); }),
   }),
   notifications: router({
     list: protectedProcedure.query(({ ctx }) => listNotifications(ctx.user.openId)),
