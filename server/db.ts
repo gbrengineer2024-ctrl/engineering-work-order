@@ -148,7 +148,7 @@ export async function syncTechnicianFromMaintenanceProfile(profile: NonNullable<
   } });
 }
 
-export async function listWorkOrders(filters: { status?: string; priority?: string; category?: string; location?: string; from?: Date; to?: Date; search?: string; requesterUserId?: string; assignedTechId?: string }) {
+export async function listWorkOrders(filters: { status?: string; priority?: string; category?: string; location?: string; from?: Date; to?: Date; search?: string; requesterUserId?: string; requesterDepartment?: string; assignedTechId?: string }) {
   const db = await getDb();
   if (!db) return [];
   const conditions = [];
@@ -160,6 +160,7 @@ export async function listWorkOrders(filters: { status?: string; priority?: stri
   if (filters.to) conditions.push(lte(workOrders.createdAt, filters.to));
   if (filters.search) conditions.push(or(like(workOrders.woId, `%${filters.search}%`), like(workOrders.description, `%${filters.search}%`)));
   if (filters.requesterUserId) conditions.push(eq(workOrders.requesterUserId, filters.requesterUserId));
+  if (filters.requesterDepartment) conditions.push(sql`exists (select 1 from maintenance_users mu where mu.userId = ${workOrders.requesterUserId} and mu.department = ${filters.requesterDepartment})`);
   if (filters.assignedTechId) conditions.push(eq(workOrders.assignedTechId, filters.assignedTechId));
   return db.select().from(workOrders).where(conditions.length ? and(...conditions) : undefined).orderBy(desc(workOrders.createdAt));
 }
