@@ -63,12 +63,12 @@ describe("สิทธิ์ API คลังอะไหล่", () => {
     await expect(reporter.partIssues.request({ woId: "WO-TEST", partId: "PART-TEST", qtyRequested: 1, notes: "เหตุผล" })).rejects.toThrow("FORBIDDEN");
   });
 
-  it("ปฏิเสธผู้ใช้ที่ไม่มีสิทธิ์เข้าถึงใบงานจากการขอเบิกอะไหล่", async () => {
+  it("ปฏิเสธช่างที่ไม่ได้รับมอบหมายจากการขอเบิกอะไหล่", async () => {
     vi.mocked(getWorkOrder).mockResolvedValueOnce({
-      workOrder: { woId: "WO-OTHER", requesterUserId: "another-user", assignedTechId: null },
+      workOrder: { woId: "WO-OTHER", requesterUserId: "another-user", assignedTechId: "OTHER-TECH" },
     } as any);
-    const caller = appRouter.createCaller(createContext("REPORTER"));
-    await expect(caller.partIssues.request({ woId: "WO-OTHER", partId: "PART-TEST", qtyRequested: 1 })).rejects.toThrow("FORBIDDEN");
+    const caller = appRouter.createCaller(createContext("TECHNICIAN"));
+    await expect(caller.partIssues.request({ woId: "WO-OTHER", partId: "PART-TEST", qtyRequested: 1, notes: "ใช้ซ่อม" })).rejects.toThrow("FORBIDDEN");
     expect(requestPartIssue).not.toHaveBeenCalled();
   });
 
