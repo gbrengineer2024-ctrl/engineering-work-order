@@ -406,8 +406,8 @@ export async function listPartIssues(filters: { woId?: string; status?: string }
 export function inventoryAfterApproval(stock: { currentStockQty: number; reservedQty: number; availableQty: number }, qtyApproved: number) {
   if (qtyApproved <= 0) throw new Error("QTY_MUST_BE_POSITIVE");
   if (qtyApproved > stock.availableQty) throw new Error("INSUFFICIENT_STOCK");
-  const reservedQty = stock.reservedQty + qtyApproved;
-  return { currentStockQty: stock.currentStockQty, reservedQty, availableQty: stock.currentStockQty - reservedQty };
+  const currentStockQty = stock.currentStockQty - qtyApproved;
+  return { currentStockQty, reservedQty: stock.reservedQty, availableQty: currentStockQty - stock.reservedQty };
 }
 
 export function inventoryAfterIssuance(stock: { currentStockQty: number; reservedQty: number }, qtyApproved: number, qtyIssued: number) {
