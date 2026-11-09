@@ -500,40 +500,10 @@ export async function approvePartIssue(input: { issueId: string; qtyApproved: nu
   return { issueId: input.issueId, issueStatus: "APPROVED" as const };
 }
 
-export async function issueConsumablePart(input: { issueId: string; qtyIssued: number; issuedByUserId: string }) {
-  const db = await getDb();
-  if (!db) throw new Error("Database unavailable");
-  const [issue] = await db.select().from(partIssues).where(eq(partIssues.issueId, input.issueId)).limit(1);
-  if (!issue) throw new Error("PART_ISSUE_NOT_FOUND");
-  if (issue.issueStatus !== "REQUESTED") throw new Error("PART_ISSUE_NOT_REQUESTED");
-  if (input.qtyIssued <= 0 || input.qtyIssued > issue.qtyRequested) throw new Error("INVALID_ISSUE_QTY");
-  const [part] = await db.select().from(parts).where(eq(parts.partId, issue.partId)).limit(1);
-  if (!part || !part.isActive) throw new Error("PART_NOT_FOUND");
-  if (!/(CONSUMABLE|DISPOSABLE|SUPPLY|วัสดุสิ้นเปลือง)/i.test(part.categoryCode)) throw new Error("PART_IS_NOT_CONSUMABLE");
-  if (input.qtyIssued > part.availableQty) throw new Error("INSUFFICIENT_STOCK");
-  const now = new Date();
-  const currentStockQty = part.currentStockQty - input.qtyIssued;
-  const issueCostThb = String(Number(issue.unitCostThb) * input.qtyIssued);
-  await db.batch([
-    db.update(parts).set({ currentStockQty, availableQty: currentStockQty - part.reservedQty, updatedAt: now }).where(and(
-      eq(parts.partId, part.partId),
-      eq(parts.currentStockQty, part.currentStockQty),
-      eq(parts.reservedQty, part.reservedQty),
-      eq(parts.availableQty, part.availableQty),
-      sql`EXISTS (SELECT 1 FROM ${partIssues} WHERE ${partIssues.issueId} = ${input.issueId} AND ${partIssues.issueStatus} = 'REQUESTED')`,
-    )),
-    db.update(partIssues).set({ qtyApproved: input.qtyIssued, qtyIssued: input.qtyIssued, issueCostThb, approvedByUserId: input.issuedByUserId, approvedAt: now, issueStatus: "ISSUED", issueAt: now, updatedAt: now }).where(and(
-      eq(partIssues.issueId, input.issueId),
-      eq(partIssues.issueStatus, "REQUESTED"),
-      eq(partIssues.qtyRequested, issue.qtyRequested),
-      sql`changes() > 0`,
-    )),
-  ]);
-  const [updatedIssue] = await db.select().from(partIssues).where(eq(partIssues.issueId, input.issueId)).limit(1);
-  if (updatedIssue?.issueStatus !== "ISSUED" || updatedIssue.qtyIssued !== input.qtyIssued) throw new Error("PART_ISSUE_CONCURRENT_UPDATE");
-  return { issueId: input.issueId, issueStatus: "ISSUED" as const };
+export async function issueConsumablePart(_input: { issueId: string; qtyIssued: number; issuedByUserId: string }) {
+  // Consumable requests must use the same approval flow; direct issuance is disabled.
+  throw new Error("SEPARATE_ISSUE_STEP_DISABLED");
 }
-
 export async function issuePart(_input: { issueId: string; qtyIssued: number }) {
   // Stock is deducted once when the request is approved. A second issuance step is disabled.
   throw new Error("SEPARATE_ISSUE_STEP_DISABLED");
