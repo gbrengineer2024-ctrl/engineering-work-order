@@ -43,17 +43,24 @@ describe("สิทธิ์ API คลังอะไหล่", () => {
     expect(updatePart).toHaveBeenCalledOnce();
   });
 
-  it.each<Role>(["ADMIN", "SUPERVISOR"])("อนุญาต %s อนุมัติและจ่ายอะไหล่", async role => {
+  it.each<Role>(["ADMIN", "SUPERVISOR"])("อนุญาต %s อนุมัติอะไหล่และปิดขั้นตอนจ่ายแยก", async role => {
     const caller = appRouter.createCaller(createContext(role));
     await expect(caller.partIssues.approve({ issueId: "ISSUE-TEST", qtyApproved: 2 })).resolves.toMatchObject({ issueStatus: "APPROVED" });
-    await expect(caller.partIssues.issue({ issueId: "ISSUE-TEST", qtyIssued: 2 })).resolves.toMatchObject({ issueStatus: "ISSUED" });
+    await expect(caller.partIssues.issue({ issueId: "ISSUE-TEST", qtyIssued: 2 })).rejects.toThrow("SEPARATE_ISSUE_STEP_DISABLED");
     expect(approvePartIssue).toHaveBeenCalledWith({ issueId: "ISSUE-TEST", qtyApproved: 2, approvedByUserId: `line-${role}` });
-    expect(issuePart).toHaveBeenCalledWith({ issueId: "ISSUE-TEST", qtyIssued: 2 });
+    expect(issuePart).not.toHaveBeenCalled();
   });
 
-  it.each<Role>(["ADMIN", "REPORTER", "SUPERVISOR", "TECHNICIAN"])("อนุญาต %s ส่งคำขอเบิกอะไหล่", async role => {
-    await expect(appRouter.createCaller(createContext(role)).partIssues.request({ woId: "WO-TEST", partId: "PART-TEST", qtyRequested: 1 })).resolves.toEqual({ issueId: "ISSUE-TEST" });
-    expect(requestPartIssue).toHaveBeenCalledWith({ woId: "WO-TEST", partId: "PART-TEST", qtyRequested: 1, requestedByUserId: `line-${role}` });
+  it.each<Role>(["ADMIN", "SUPERVISOR", "TECHNICIAN"])("อนุญาต %s ส่งคำขอเบิกอะไหล่พร้อมหมายเหตุ", async role => {
+    await expect(appRouter.createCaller(createContext(role)).partIssues.request({ woId: "WO-TEST", partId: "PART-TEST", qtyRequested: 1, notes: "ใช้สำหรับซ่อมใบงาน" })).resolves.toEqual({ issueId: "ISSUE-TEST" });
+    expect(requestPartIssue).toHaveBeenCalledWith({ woId: "WO-TEST", partId: "PART-TEST", qtyRequested: 1, notes: "ใช้สำหรับซ่อมใบงาน", requestedByUserId: `line-${role}` });
+  });
+
+  it("บังคับระบุหมายเหตุและไม่อนุญาต REPORTER ส่งคำขอเบิก", async () => {
+    const admin = appRouter.createCaller(createContext("ADMIN"));
+    await expect(admin.partIssues.request({ woId: "WO-TEST", partId: "PART-TEST", qtyRequested: 1 })).rejects.toThrow("PART_REQUEST_NOTE_REQUIRED");
+    const reporter = appRouter.createCaller(createContext("REPORTER"));
+    await expect(reporter.partIssues.request({ woId: "WO-TEST", partId: "PART-TEST", qtyRequested: 1, notes: "เหตุผล" })).rejects.toThrow("FORBIDDEN");
   });
 
   it("ปฏิเสธผู้ใช้ที่ไม่มีสิทธิ์เข้าถึงใบงานจากการขอเบิกอะไหล่", async () => {
@@ -65,12 +72,14 @@ describe("สิทธิ์ API คลังอะไหล่", () => {
     expect(requestPartIssue).not.toHaveBeenCalled();
   });
 
-  it("ปฏิเสธผู้ใช้ทั่วไปเมื่อขอรายการเบิกทั้งหมดโดยไม่ระบุใบงาน", async () => {
+  it("ปฏิเสธ REPORTER เมื่อขอรายการเบิกทั้งหมด", async () => {
     const caller = appRouter.createCaller(createContext("REPORTER"));
-    await expect(caller.partIssues.list()).rejects.toThrow("WO_ID_REQUIRED");
+    await expect(caller.partIssues.list()).rejects.toThrow("FORBIDDEN");
   });
 
   it("อนุญาตช่างที่ผูกกับ techId ให้เปิดใบงานที่ได้รับมอบหมาย", async () => {
+    vi.mocked(getWorkOrder).mockResolvedValue({ workOrder: { woId: "WO-ASSIGNED", requesterUserId: "line-REPORTER", assignedTechId: "TECH-TEST" } } as any);
+    vi.mocked(getTechnicianIdForUser).mockResolvedValue("TECH-TEST");
     const caller = appRouter.createCaller(createContext("TECHNICIAN"));
     await expect(caller.workOrders.detail({ woId: "WO-ASSIGNED" })).resolves.toMatchObject({
       workOrder: { assignedTechId: "TECH-TEST" },
