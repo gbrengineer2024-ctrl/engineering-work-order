@@ -406,16 +406,9 @@ export async function listPartIssues(filters: { woId?: string; status?: string }
 export function inventoryAfterApproval(stock: { currentStockQty: number; reservedQty: number; availableQty: number }, qtyApproved: number) {
   if (qtyApproved <= 0) throw new Error("QTY_MUST_BE_POSITIVE");
   if (qtyApproved > stock.availableQty) throw new Error("INSUFFICIENT_STOCK");
+  // Approval is the single stock-deduction point. Do not reserve or deduct again at issuance.
   const currentStockQty = stock.currentStockQty - qtyApproved;
   return { currentStockQty, reservedQty: stock.reservedQty, availableQty: currentStockQty - stock.reservedQty };
-}
-
-export function inventoryAfterIssuance(stock: { currentStockQty: number; reservedQty: number }, qtyApproved: number, qtyIssued: number) {
-  if (qtyIssued <= 0 || qtyIssued > qtyApproved) throw new Error("INVALID_ISSUE_QTY");
-  if (stock.reservedQty < qtyApproved || stock.currentStockQty < qtyIssued) throw new Error("INSUFFICIENT_STOCK");
-  const currentStockQty = stock.currentStockQty - qtyIssued;
-  const reservedQty = stock.reservedQty - qtyApproved;
-  return { currentStockQty, reservedQty, availableQty: currentStockQty - reservedQty };
 }
 
 export async function createPart(input: typeof parts.$inferInsert) {
@@ -541,40 +534,9 @@ export async function issueConsumablePart(input: { issueId: string; qtyIssued: n
   return { issueId: input.issueId, issueStatus: "ISSUED" as const };
 }
 
-export async function issuePart(input: { issueId: string; qtyIssued: number }) {
-  const db = await getDb();
-  if (!db) throw new Error("Database unavailable");
-
-  const [issue] = await db.select().from(partIssues).where(eq(partIssues.issueId, input.issueId)).limit(1);
-  if (!issue) throw new Error("PART_ISSUE_NOT_FOUND");
-  if (issue.issueStatus !== "APPROVED") throw new Error("PART_ISSUE_NOT_APPROVED");
-  const [part] = await db.select().from(parts).where(eq(parts.partId, issue.partId)).limit(1);
-  if (!part) throw new Error("PART_NOT_FOUND");
-
-  const inventory = inventoryAfterIssuance(part, issue.qtyApproved, input.qtyIssued);
-  const now = new Date();
-  const issueCostThb = String(Number(issue.unitCostThb) * input.qtyIssued);
-  await db.batch([
-    db.update(parts).set({ ...inventory, updatedAt: now }).where(and(
-      eq(parts.partId, part.partId),
-      eq(parts.currentStockQty, part.currentStockQty),
-      eq(parts.reservedQty, part.reservedQty),
-      eq(parts.availableQty, part.availableQty),
-      sql`EXISTS (SELECT 1 FROM ${partIssues} WHERE ${partIssues.issueId} = ${input.issueId} AND ${partIssues.issueStatus} = 'APPROVED')`,
-    )),
-    db.update(partIssues).set({ qtyIssued: input.qtyIssued, issueCostThb, issueStatus: "ISSUED", issueAt: now, updatedAt: now }).where(and(
-      eq(partIssues.issueId, input.issueId),
-      eq(partIssues.issueStatus, "APPROVED"),
-      eq(partIssues.qtyApproved, issue.qtyApproved),
-      sql`changes() > 0`,
-    )),
-  ]);
-
-  const [updatedIssue] = await db.select().from(partIssues).where(eq(partIssues.issueId, input.issueId)).limit(1);
-  if (updatedIssue?.issueStatus !== "ISSUED" || updatedIssue.qtyIssued !== input.qtyIssued) {
-    throw new Error("PART_ISSUE_CONCURRENT_UPDATE");
-  }
-  return { issueId: input.issueId, issueStatus: "ISSUED" as const };
+export async function issuePart(_input: { issueId: string; qtyIssued: number }) {
+  // Stock is deducted once when the request is approved. A second issuance step is disabled.
+  throw new Error("SEPARATE_ISSUE_STEP_DISABLED");
 }
 
 export async function listLocations() { const db = await getDb(); return db ? db.select().from(locations).orderBy(locations.areaName) : []; }
