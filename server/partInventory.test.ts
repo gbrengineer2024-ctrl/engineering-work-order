@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { inventoryAfterApproval } from "./db";
+import { inventoryAfterApproval, issueConsumablePart } from "./db";
 
 describe("กฎจำนวนคงเหลือของคลังอะไหล่", () => {
   it("หักสต็อกจริงทันทีเมื่ออนุมัติ และไม่กันยอดซ้ำ", () => {
@@ -17,5 +17,9 @@ describe("กฎจำนวนคงเหลือของคลังอะ�
   it("ไม่ยอมรับจำนวนอนุมัติเป็นศูนย์หรือติดลบ", () => {
     expect(() => inventoryAfterApproval({ currentStockQty: 12, reservedQty: 2, availableQty: 10 }, 0)).toThrow("QTY_MUST_BE_POSITIVE");
     expect(() => inventoryAfterApproval({ currentStockQty: 12, reservedQty: 2, availableQty: 10 }, -1)).toThrow("QTY_MUST_BE_POSITIVE");
+  });
+  
+  it("ปิดการตัดสต็อกวัสดุสิ้นเปลืองโดยไม่ผ่านอนุมัติ", async () => {
+    await expect(issueConsumablePart({ issueId: "ISS-TEST", qtyIssued: 1, issuedByUserId: "ADMIN" })).rejects.toThrow("SEPARATE_ISSUE_STEP_DISABLED");
   });
 });
